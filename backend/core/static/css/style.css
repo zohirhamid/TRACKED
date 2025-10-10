@@ -1,0 +1,679 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #5B21B6;
+    --primary-light: #EDE9FE;
+    --success: #059669;
+    --success-light: #D1FAE5;
+    --warning: #F59E0B;
+    --warning-light: #FEF3C7;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --border-light: #F3F4F6;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F9FAFB;
+    --hover: #F3F4F6;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-secondary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+.header {
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #4a4a4a, #2a2a2a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+}
+
+.main-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.toolbar {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+    background-color: var(--hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: #4C1D95;
+}
+
+.spreadsheet-wrapper {
+    flex: 1;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+}
+
+.spreadsheet-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+/* SPREADSHEET GRID STYLING */
+
+.spreadsheet {
+    display: grid;
+    min-width: fit-content;
+    font-size: 13px;
+    border-collapse: collapse;
+    background-color: var(--bg-primary);
+}
+
+/* Header Cells */
+.header-cell {
+    background-color: #F8FAFC;
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 12px 8px;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.header-cell.date-header {
+    justify-content: center;
+    background-color: #F1F5F9;
+    border-left: none;
+    min-width: 80px;
+    max-width: 80px;
+}
+
+.header-cell.habit-header {
+    flex-direction: column;
+    gap: 4px;
+    min-width: 100px;
+    max-width: 100px;
+    cursor: grab;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.header-cell.habit-header:hover {
+    background-color: #E2E8F0;
+}
+
+/* Drag and Drop States */
+.header-cell.habit-header:active {
+    cursor: grabbing;
+}
+
+.header-cell.habit-header.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.header-cell.habit-header.drag-over {
+    background-color: rgba(91, 33, 182, 0.1);
+    border-color: var(--primary);
+    transform: scale(1.02);
+}
+
+.drag-indicator {
+    position: absolute;
+    width: 3px;
+    height: 100%;
+    background-color: var(--primary);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.drag-indicator.show {
+    opacity: 1;
+}
+
+.drag-indicator.left {
+    left: -2px;
+}
+
+.drag-indicator.right {
+    right: -2px;
+}
+
+/* Date Cells */
+.date-cell {
+    background-color: #F8FAFC;
+    border: 1px solid var(--border);
+    border-left: none;
+    border-top: none;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    max-width: 80px;
+    font-size: 11px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background-color: #F1F5F9;
+}
+
+.day-number {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.day-name {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Data Cells */
+.data-cell {
+    border: 1px solid var(--border);
+    border-left: none;
+    border-top: none;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    max-width: 100px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    background-color: var(--bg-primary);
+}
+
+/* Current Day Highlighting */
+.data-cell.current-day {
+    background-color: rgba(255, 235, 59, 0.15) !important; /* Low opacity yellow */
+}
+
+.date-cell.current-day {
+    background-color: rgba(255, 235, 59, 0.2) !important; /* Slightly more visible on date column */
+}
+
+.data-cell:hover {
+    background-color: var(--hover);
+    transform: scale(1.02);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.data-cell.loading {
+    background-color: #F3F4F6;
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.data-cell.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty Cell States */
+.data-cell.empty {
+    background-color: var(--bg-primary);
+}
+
+.data-cell.empty .placeholder {
+    color: #CBD5E1;
+    font-size: 18px;
+    opacity: 0.5;
+}
+
+.data-cell.empty:hover .placeholder {
+    color: var(--primary);
+    opacity: 0.8;
+}
+
+/* Cell with Data */
+.data-cell.has-data {
+    background-color: var(--bg-primary);
+    font-weight: 500;
+}
+
+/* Binary Value Styling */
+.data-cell.yes {
+    background-color: var(--success-light);
+    color: var(--success);
+    border-color: #A7F3D0;
+}
+
+.data-cell.no {
+    background-color: #FEF2F2;
+    color: #DC2626;
+    border-color: #FECACA;
+}
+
+.check-mark {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.x-mark {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Number Value Styling */
+.number-value {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+/* Time Value Styling */
+.time-value {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--primary);
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Text Value Styling */
+.text-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: center;
+    word-break: break-word;
+}
+
+/* Hover Effects - Individual Cell Only */
+.data-cell:hover {
+    background-color: var(--hover);
+    transform: scale(1.02);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Type Badges */
+.type-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.type-binary { 
+    background-color: var(--primary-light); 
+    color: var(--primary); 
+}
+
+.type-number { 
+    background-color: var(--success-light); 
+    color: var(--success); 
+}
+
+.type-time { 
+    background-color: var(--warning-light); 
+    color: var(--warning); 
+}
+
+.type-count { 
+    background-color: var(--success-light); 
+    color: var(--success); 
+}
+
+.type-yes_no { 
+    background-color: var(--primary-light); 
+    color: var(--primary); 
+}
+
+.type-checkbox { 
+    background-color: var(--primary-light); 
+    color: var(--primary); 
+}
+
+/* ============================================
+   MONTH NAVIGATION
+   ============================================ */
+
+.month-nav {
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    align-items: center;
+}
+
+.month-tab {
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    color: var(--text-secondary);
+}
+
+.month-tab:hover {
+    background-color: var(--hover);
+    color: var(--text-primary);
+}
+
+.month-tab.active {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal {
+    background-color: var(--bg-primary);
+    padding: 24px;
+    border-radius: 12px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.input, .select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    background-color: var(--bg-primary);
+}
+
+.input:focus, .select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.empty-state {
+    display: none;
+    text-align: center;
+    padding: 60px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .header-cell.habit-header,
+    .data-cell {
+        min-width: 80px;
+        max-width: 80px;
+    }
+    
+    .date-cell {
+        min-width: 60px;
+        max-width: 60px;
+    }
+    
+    .spreadsheet {
+        font-size: 11px;
+    }
+}
+
+/* ============================================
+   NOTIFICATION SYSTEM
+   ============================================ */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10000;
+    max-width: 300px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.notification-success {
+    background-color: var(--success-light);
+    color: var(--success);
+    border: 1px solid #A7F3D0;
+}
+
+.notification-error {
+    background-color: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--hover);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}

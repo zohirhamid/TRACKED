@@ -1,8 +1,55 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Home - Tracked{% endblock %}
+{% block title %}Dashboard | TRACKED{% endblock %}
 
 {% block content %}
-    <h2>Welcome to Tracked</h2>
-    <p>Your personal life tracker dashboard will appear here.</p>
+    <div class="toolbar">
+        <button class="btn btn-primary">+ Add Tracker</button>
+    </div>
+
+    <div class="spreadsheet-wrapper">
+        <div class="spreadsheet-container">
+            <div class="spreadsheet" id="spreadsheet">
+                <!-- You can render table data dynamically here -->
+            </div>
+            <div class="empty-state">
+                <h3>No trackers yet</h3>
+                <p>Add your first tracker to start logging your life data</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tracker Modal (static markup only, no JS) -->
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">Add New Metric</div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label class="input-label">Tracker name</label>
+                    <input type="text" class="input" name="tracker_name" placeholder="e.g., Sleep, Calories, Workout">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Type</label>
+                    <select class="select" name="tracker_type">
+                        <option value="binary">Yes/No (Binary)</option>
+                        <option value="number">Number</option>
+                        <option value="time">Time</option>
+                        <option value="duration">Duration (Start/End Time)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Unit (optional)</label>
+                    <input type="text" class="input" name="tracker_unit" placeholder="e.g., cal, oz, ml, mins">
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn" type="reset">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Add Tracker</button>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
