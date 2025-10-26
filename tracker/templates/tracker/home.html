@@ -1,0 +1,452 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Dashboard | TRACKED{% endblock %}
+{% block content %}
+    <div class="toolbar">
+        <div class="month-navigation">
+            <button class="btn" id="prevMonth">← Previous</button>
+            <span class="current-month" id="currentMonth">{{ current_month|date:"F Y" }}</span>
+            <button class="btn" id="nextMonth">Next →</button>
+        </div>
+        <button class="btn btn-primary" id="addTrackerBtn">+ Add Tracker</button>
+    </div>
+    <div class="spreadsheet-wrapper">
+        <div class="spreadsheet-container">
+            {% if trackers %}
+                <div class="spreadsheet" id="spreadsheet">
+                    <table class="tracker-table">
+                        <thead>
+                            <tr>
+                                <th class="date-column">Date</th>
+                                {% for tracker in trackers %}
+                                    <th class="tracker-column">
+                                        {{ tracker.name }}
+                                        {% if tracker.unit %}
+                                            <span class="unit">({{ tracker.unit }})</span>
+                                        {% endif %}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for date in dates %}
+                                <tr {% if date == today %}class="today"{% endif %}>
+                                    <td class="date-cell">
+                                        <div class="date-content">
+                                            <span class="day-name">{{ date|date:"D" }}</span>
+                                            <span class="date-num">{{ date|date:"d" }}</span>
+                                        </div>
+                                        {% if date == today %}
+                                            <span class="today-badge">Today</span>
+                                        {% endif %}
+                                    </td>
+                                    {% for tracker in trackers %}
+                                        <td class="entry-cell" 
+                                            data-tracker-id="{{ tracker.id }}"
+                                            data-tracker-name="{{ tracker.name }}"
+                                            data-date="{{ date|date:'Y-m-d' }}"
+                                            data-date-display="{{ date|date:'M d, Y' }}"
+                                            data-type="{{ tracker.tracker_type }}"
+                                            data-week-id="week-{{ date|date:'Y-m-W' }}-tracker-{{ tracker.id }}">
+                                            <span class="empty">-</span>
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                {% if date|date:"w" == "0" or forloop.last %}
+                                    <tr class="week-separator">
+                                        <td class="week-label">Week Total</td>
+                                        {% for tracker in trackers %}
+                                            <td class="week-total" 
+                                                data-tracker-id="{{ tracker.id }}"
+                                                data-tracker-type="{{ tracker.tracker_type }}"
+                                                data-week-id="week-{{ date|date:'Y-m-W' }}-tracker-{{ tracker.id }}">
+                                                -
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>No trackers yet</h3>
+                    <p>Add your first tracker to start logging your life data</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add Tracker Modal -->
+    <div class="modal-overlay" id="addTrackerModal">
+        <div class="modal">
+            <div class="modal-header">Add New Tracker</div>
+            <form method="post" action="{% url 'add_tracker' %}">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label class="input-label">Tracker name</label>
+                    <input type="text" class="input" name="tracker_name" placeholder="e.g., Sleep, Calories, Workout" required>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Type</label>
+                    <select class="select" name="tracker_type">
+                        <option value="binary">Yes/No (Binary)</option>
+                        <option value="number">Number</option>
+                        <option value="time">Time</option>
+                        <option value="duration">Duration (Start/End Time)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Unit (optional)</label>
+                    <input type="text" class="input" name="tracker_unit" placeholder="e.g., cal, oz, ml, mins">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" type="button" id="cancelBtn">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Add Tracker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Entry Modal -->
+    <div class="modal-overlay" id="entryModal">
+        <div class="modal">
+            <div class="modal-header" id="entryModalTitle">Enter Value</div>
+            <div class="entry-info">
+                <div><strong>Tracker:</strong> <span id="entryTrackerName"></span></div>
+                <div><strong>Date:</strong> <span id="entryDate"></span></div>
+            </div>
+
+            <!-- Binary Input -->
+            <div id="binaryInput" style="display: none;">
+                <div class="binary-buttons">
+                    <button class="btn btn-success" data-value="true">Yes ✓</button>
+                    <button class="btn btn-danger" data-value="false">No ✗</button>
+                </div>
+            </div>
+
+            <!-- Number Input -->
+            <div id="numberInput" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label">Value</label>
+                    <input type="number" class="input" id="numberValue" step="any" placeholder="Enter number">
+                </div>
+            </div>
+
+            <!-- Time Input -->
+            <div id="timeInput" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label">Time</label>
+                    <input type="time" class="input" id="timeValue">
+                </div>
+            </div>
+
+            <!-- Duration Input -->
+            <div id="durationInput" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label">Start Time</label>
+                    <input type="time" class="input" id="durationStart">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">End Time</label>
+                    <input type="time" class="input" id="durationEnd">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-danger" type="button" id="deleteEntryBtn" style="margin-right: auto;">Delete</button>
+                <button class="btn" type="button" id="cancelEntryBtn">Cancel</button>
+                <button class="btn btn-primary" type="button" id="saveEntryBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        const addTrackerModal = document.getElementById('addTrackerModal');
+        const addTrackerBtn = document.getElementById('addTrackerBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        const entryModal = document.getElementById('entryModal');
+        const saveEntryBtn = document.getElementById('saveEntryBtn');
+        const cancelEntryBtn = document.getElementById('cancelEntryBtn');
+        const deleteEntryBtn = document.getElementById('deleteEntryBtn');
+
+        let currentCell = null;
+        let currentTrackerId = null;
+        let currentDate = null;
+        let currentType = null;
+
+        addTrackerBtn.addEventListener('click', () => {
+            addTrackerModal.style.display = 'flex';
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            addTrackerModal.style.display = 'none';
+        });
+
+        addTrackerModal.addEventListener('click', (e) => {
+            if (e.target === addTrackerModal) {
+                addTrackerModal.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.entry-cell').forEach(cell => {
+            cell.addEventListener('click', function() {
+                currentCell = this;
+                currentTrackerId = this.dataset.trackerId;
+                currentDate = this.dataset.date;
+                currentType = this.dataset.type;
+                const trackerName = this.dataset.trackerName;
+                const dateDisplay = this.dataset.dateDisplay;
+                const currentValue = this.textContent.trim();
+
+                document.getElementById('entryModalTitle').textContent = 'Enter Value';
+                document.getElementById('entryTrackerName').textContent = trackerName;
+                document.getElementById('entryDate').textContent = dateDisplay;
+
+                document.getElementById('binaryInput').style.display = 'none';
+                document.getElementById('numberInput').style.display = 'none';
+                document.getElementById('timeInput').style.display = 'none';
+                document.getElementById('durationInput').style.display = 'none';
+
+                if (currentValue !== '-') {
+                    deleteEntryBtn.style.display = 'block';
+                } else {
+                    deleteEntryBtn.style.display = 'none';
+                }
+
+                if (currentType === 'binary') {
+                    document.getElementById('binaryInput').style.display = 'block';
+                } else if (currentType === 'number') {
+                    document.getElementById('numberInput').style.display = 'block';
+                    document.getElementById('numberValue').value = currentValue !== '-' ? currentValue : '';
+                    setTimeout(() => document.getElementById('numberValue').focus(), 100);
+                } else if (currentType === 'time') {
+                    document.getElementById('timeInput').style.display = 'block';
+                    document.getElementById('timeValue').value = currentValue !== '-' ? currentValue : '';
+                    setTimeout(() => document.getElementById('timeValue').focus(), 100);
+                } else if (currentType === 'duration') {
+                    document.getElementById('durationInput').style.display = 'block';
+                    if (currentValue !== '-' && currentValue.includes('-')) {
+                        const [start, end] = currentValue.split(' - ').map(t => t.trim());
+                        document.getElementById('durationStart').value = start;
+                        document.getElementById('durationEnd').value = end;
+                    }
+                    setTimeout(() => document.getElementById('durationStart').focus(), 100);
+                }
+
+                entryModal.style.display = 'flex';
+            });
+        });
+
+        document.querySelectorAll('#binaryInput .btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const value = this.dataset.value === 'true';
+                await updateEntry(currentTrackerId, currentDate, value, currentType, currentCell);
+                entryModal.style.display = 'none';
+            });
+        });
+
+        saveEntryBtn.addEventListener('click', async () => {
+            let value = null;
+
+            if (currentType === 'binary') {
+                return;
+            } else if (currentType === 'number') {
+                value = document.getElementById('numberValue').value;
+                if (!value) return;
+            } else if (currentType === 'time') {
+                value = document.getElementById('timeValue').value;
+                if (!value) return;
+            } else if (currentType === 'duration') {
+                const start = document.getElementById('durationStart').value;
+                const end = document.getElementById('durationEnd').value;
+                if (!start || !end) return;
+                value = `${start} - ${end}`;
+            }
+
+            await updateEntry(currentTrackerId, currentDate, value, currentType, currentCell);
+            entryModal.style.display = 'none';
+        });
+
+        deleteEntryBtn.addEventListener('click', async () => {
+            await deleteEntry(currentTrackerId, currentDate, currentCell);
+            entryModal.style.display = 'none';
+        });
+
+        cancelEntryBtn.addEventListener('click', () => {
+            entryModal.style.display = 'none';
+        });
+
+        entryModal.addEventListener('click', (e) => {
+            if (e.target === entryModal) {
+                entryModal.style.display = 'none';
+            }
+        });
+
+        async function updateEntry(trackerId, date, value, type, cell) {
+            try {
+                const response = await fetch('/entry/update/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        tracker_id: trackerId,
+                        date: date,
+                        value: value
+                    })
+                });
+
+                if (response.ok) {
+                    if (type === 'binary') {
+                        cell.innerHTML = value ? '✓' : '✗';
+                    } else if (type === 'number') {
+                        cell.innerHTML = value;
+                    } else if (type === 'time') {
+                        cell.innerHTML = value;
+                    } else if (type === 'duration') {
+                        cell.innerHTML = value;
+                    }
+                    
+                    calculateWeekTotal(cell.dataset.weekId, cell.dataset.trackerId, type);
+                } else {
+                    alert('Error updating entry');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating entry');
+            }
+        }
+
+        async function deleteEntry(trackerId, date, cell) {
+            try {
+                const response = await fetch('/entry/delete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        tracker_id: trackerId,
+                        date: date
+                    })
+                });
+
+                if (response.ok) {
+                    cell.innerHTML = '<span class="empty">-</span>';
+                    
+                    calculateWeekTotal(cell.dataset.weekId, cell.dataset.trackerId, cell.dataset.type);
+                } else {
+                    alert('Error deleting entry');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error deleting entry');
+            }
+        }
+
+        function calculateWeekTotal(weekId, trackerId, trackerType) {
+            const cells = document.querySelectorAll(`.entry-cell[data-week-id="${weekId}"]`);
+            const totalCell = document.querySelector(`.week-total[data-week-id="${weekId}"]`);
+            
+            if (!totalCell) return;
+            
+            let total = 0;
+            let count = 0;
+            let hasData = false;
+            
+            cells.forEach(cell => {
+                const text = cell.textContent.trim();
+                if (text !== '-') {
+                    hasData = true;
+                    if (trackerType === 'binary') {
+                        count++;
+                        if (text === '✓') total++;
+                    } else if (trackerType === 'number') {
+                        const num = parseFloat(text);
+                        if (!isNaN(num)) {
+                            total += num;
+                            count++;
+                        }
+                    }
+                }
+            });
+            
+            if (!hasData) {
+                totalCell.textContent = '-';
+            } else if (trackerType === 'binary') {
+                totalCell.textContent = `${total}/${count}`;
+            } else if (trackerType === 'number') {
+                totalCell.textContent = total.toFixed(1);
+            } else {
+                totalCell.textContent = '-';
+            }
+        }
+
+        function initializeWeekTotals() {
+            const weekTotals = document.querySelectorAll('.week-total');
+            weekTotals.forEach(totalCell => {
+                const weekId = totalCell.dataset.weekId;
+                const trackerId = totalCell.dataset.trackerId;
+                const trackerType = totalCell.dataset.trackerType;
+                calculateWeekTotal(weekId, trackerId, trackerType);
+            });
+        }
+
+        initializeWeekTotals();
+
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            const url = new URL(window.location.href);
+            const currentMonth = url.searchParams.get('month');
+            let date;
+            
+            if (currentMonth) {
+                const [year, month] = currentMonth.split('-').map(Number);
+                date = new Date(year, month - 1, 15); 
+            } else {
+                date = new Date();
+            }
+            
+            date.setMonth(date.getMonth() - 1);
+            const newMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            url.searchParams.set('month', newMonth);
+            window.location.href = url.toString();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            const url = new URL(window.location.href);
+            const currentMonth = url.searchParams.get('month');
+            let date;
+            
+            if (currentMonth) {
+                const [year, month] = currentMonth.split('-').map(Number);
+                date = new Date(year, month - 1, 15);
+            } else {
+                date = new Date();
+            }
+            
+            date.setMonth(date.getMonth() + 1);
+            const newMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            url.searchParams.set('month', newMonth);
+            window.location.href = url.toString();
+        });
+    </script>
+{% endblock %}

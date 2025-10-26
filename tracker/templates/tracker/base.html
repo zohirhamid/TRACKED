@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}TRACKED{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="{% url 'home' %}" style="text-decoration:none; color:inherit;">TRACKED</a>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">
+                    {% if user.is_authenticated %}
+                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                    {% else %}
+                        GU
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="month-nav">
+        {% block month_nav %}
+        {% endblock %}
+    </footer>
+</body>
+</html>
