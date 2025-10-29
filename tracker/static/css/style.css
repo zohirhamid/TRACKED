@@ -35,6 +35,7 @@ body {
     color: var(--text-primary);
 }
 
+/* Header */
 .header {
     background-color: var(--bg-primary);
     border-bottom: 1px solid var(--border);
@@ -78,6 +79,7 @@ body {
     color: white;
 }
 
+/* Main Container */
 .main-container {
     flex: 1;
     overflow: hidden;
@@ -86,14 +88,76 @@ body {
     padding: 20px;
 }
 
+/* Toolbar */
 .toolbar {
-    margin-bottom: 16px;
     display: flex;
-    gap: 12px;
+    justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    padding: 16px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 16px;
 }
 
+/* Year and Month Selector */
+.year-month-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.year-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    
+    /* Remove default dropdown arrow */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.year-select:focus {
+    outline: none;
+}
+
+
+.month-selector {
+    display: flex;
+    gap: 6px;
+}
+
+.month-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.month-btn:hover {
+    background-color: var(--hover);
+    color: var(--text-primary);
+}
+
+.month-btn.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Buttons */
 .btn {
     padding: 8px 16px;
     border: 1px solid var(--border);
@@ -131,6 +195,33 @@ body {
     background-color: #4C1D95;
 }
 
+.btn-large {
+    padding: 16px 32px;
+    font-size: 16px;
+    flex: 1;
+}
+
+.btn-success {
+    background-color: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.btn-success:hover {
+    background-color: #047857;
+}
+
+.btn-danger {
+    background-color: #DC2626;
+    color: white;
+    border-color: #DC2626;
+}
+
+.btn-danger:hover {
+    background-color: #B91C1C;
+}
+
+/* Spreadsheet */
 .spreadsheet-wrapper {
     flex: 1;
     background-color: var(--bg-primary);
@@ -153,11 +244,14 @@ body {
     border-collapse: collapse;
     background: white;
     table-layout: fixed;
+    font-size: 11px;
 }
 
 .tracker-table th,
 .tracker-table td {
-    padding: 12px;
+    padding: 4px 8px;
+    height: 21px;
+    line-height: 21px;
     border: 1px solid var(--border);
     text-align: left;
     border-left: none;
@@ -170,9 +264,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 10;
-    font-size: 12px;
+    font-size: 11px;
 }
 
+/* Date Column */
 .date-column {
     width: 100px;
     min-width: 100px;
@@ -184,12 +279,6 @@ body {
     border-left: 1px solid var(--border) !important;
 }
 
-.tracker-column {
-    width: 150px;
-    min-width: 150px;
-    max-width: 150px;
-}
-
 .date-cell {
     width: 100px;
     min-width: 100px;
@@ -199,17 +288,18 @@ body {
     left: 0;
     z-index: 5;
     border-left: 1px solid var(--border) !important;
-    font-size: 12px;
+    font-size: 11px;
+    padding: 2px 6px;
 }
 
 .date-content {
     display: flex;
+    gap: 4px;
     align-items: center;
-    gap: 8px;
 }
 
 .day-name {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
     text-transform: uppercase;
     min-width: 30px;
@@ -217,24 +307,57 @@ body {
 }
 
 .date-num {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
+/* Tracker Column */
+.tracker-column {
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+/* Entry Cells */
 .entry-cell {
     cursor: pointer;
-    width: 150px;
-    min-width: 150px;
-    max-width: 150px;
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
     text-align: center;
     transition: all 0.15s ease;
+    user-select: none;
+    font-size: 11px;
+    padding: 2px 6px;
 }
 
 .entry-cell:hover {
     background: var(--hover);
     transform: scale(1.02);
     z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.entry-cell:active {
+    transform: scale(0.98);
+}
+
+.entry-cell:not(.empty) {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.entry-cell .empty {
+    transition: all 0.15s ease;
+}
+
+.entry-cell:hover .empty {
+    color: var(--primary);
+    opacity: 0.8;
 }
 
 .empty {
@@ -242,6 +365,7 @@ body {
     font-size: 16px;
 }
 
+/* Today Highlight */
 .today {
     background: #FFF9E6;
 }
@@ -252,65 +376,73 @@ body {
 
 .today-badge {
     background: #FFD700;
-    padding: 2px 6px;
+    padding: 1px 4px;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     margin-left: 4px;
 }
 
+/* Unit Label */
 .unit {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
-    font-weight: normal;
+    font-weight: 400;
     display: block;
     margin-top: 2px;
 }
 
-.tracker-table {
-    font-size: 11px;
-}
-.tracker-table th,
-.tracker-table td {
-    padding: 4px 8px;
-    height: 21px;
-    line-height: 21px;
-}
-.date-column,
-.tracker-column {
-    font-size: 11px;
-    font-weight: 500;
-    padding: 4px 8px;
-}
-.date-cell {
-    font-size: 11px;
-    padding: 2px 6px;
-}
-.date-content {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
-.day-name {
-    font-size: 10px;
-}
-.date-num {
-    font-size: 11px;
-}
-.entry-cell {
-    font-size: 11px;
-    padding: 2px 6px;
-    text-align: center;
-}
-.unit {
-    font-size: 10px;
-    font-weight: 400;
-}
-.today-badge {
-    font-size: 9px;
-    padding: 1px 4px;
+/* Week Total Row */
+.week-separator {
+    border-top: 1px solid var(--border);
 }
 
+.week-label {
+    background: #F1F5F9;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-secondary);
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    border-left: 1px solid var(--border) !important;
+    padding: 4px 8px;
+}
+
+.week-total {
+    background: #F8FAFC;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-primary);
+    text-align: center;
+    padding: 4px 8px;
+}
+
+/* Delete Tracker Button */
+.delete-tracker-btn {
+    background: none;
+    border: none;
+    color: #DC2626;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+}
+
+.delete-tracker-btn:hover {
+    opacity: 1;
+    background-color: #FEE2E2;
+    transform: scale(1.1);
+}
+
+/* Modals */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -359,6 +491,10 @@ body {
     color: var(--text-primary);
 }
 
+.modal-body {
+    margin: 20px 0;
+}
+
 .input-group {
     margin-bottom: 16px;
 }
@@ -395,106 +531,6 @@ body {
     margin-top: 20px;
 }
 
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-}
-
-.empty-state h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-}
-
-.empty-state p {
-    font-size: 14px;
-}
-
-.month-nav {
-    background-color: var(--bg-primary);
-    border-top: 1px solid var(--border);
-    padding: 12px 20px;
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    align-items: center;
-}
-
-.month-tab {
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-    color: var(--text-secondary);
-}
-
-.month-tab:hover {
-    background-color: var(--hover);
-    color: var(--text-primary);
-}
-
-.month-tab.active {
-    background-color: var(--primary-light);
-    color: var(--primary);
-}
-
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--hover);
-}
-
-::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
-}
-
-.entry-cell {
-    cursor: pointer;
-    width: 150px;
-    min-width: 150px;
-    max-width: 150px;
-    text-align: center;
-    transition: all 0.15s ease;
-    user-select: none;
-}
-
-.entry-cell:hover {
-    background: var(--hover);
-    transform: scale(1.02);
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.entry-cell:active {
-    transform: scale(0.98);
-}
-
-.entry-cell:not(.empty) {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.entry-cell .empty {
-    transition: all 0.15s ease;
-}
-
-.entry-cell:hover .empty {
-    color: var(--primary);
-    opacity: 0.8;
-}
-
 .entry-info {
     margin-bottom: 20px;
     padding: 12px;
@@ -517,71 +553,49 @@ body {
     justify-content: center;
 }
 
-.btn-large {
-    padding: 16px 32px;
-    font-size: 16px;
-    flex: 1;
-}
-
-.btn-success {
-    background-color: var(--success);
-    color: white;
-    border-color: var(--success);
-}
-
-.btn-success:hover {
-    background-color: #047857;
-}
-
-.btn-danger {
-    background-color: #DC2626;
-    color: white;
-    border-color: #DC2626;
-}
-
-.btn-danger:hover {
-    background-color: #B91C1C;
-}
-
-.modal-body {
-    margin: 20px 0;
-}
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.month-navigation {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.current-month {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-    min-width: 150px;
+/* Empty State */
+.empty-state {
     text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
 }
 
-.month-navigation .btn {
-    padding: 8px 16px;
+.empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.empty-state p {
     font-size: 14px;
 }
 
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
 
+::-webkit-scrollbar-track {
+    background: var(--hover);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .tracker-column,
     .entry-cell {
-        width: 120px;
-        min-width: 120px;
-        max-width: 120px;
+        width: 96px;
+        min-width: 96px;
+        max-width: 96px;
     }
     
     .date-column,
