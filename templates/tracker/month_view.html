@@ -110,8 +110,7 @@
                                         {% elif tracker.tracker_type == 'time' %}
                                             <span class="grid-time">{{ entry.time_value|time:'H:i' }}</span>
                                         {% elif tracker.tracker_type == 'duration' %}
-                                            <span class="grid-duration">{{ entry.duration_start|time:'H:i' }}-{{ entry.duration_end|time:'H:i' }}</span>
-                                        {% endif %}
+                                            <span class="grid-duration">{{ entry.get_duration_display }}</span>                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <div class="grid-cell-empty">—</div>
