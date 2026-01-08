@@ -7,8 +7,9 @@ from urllib.parse import urlparse, urlunparse, quote
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = '28&&2_i9hg7mt7g=oinht-u9_es^l_%6pf44*typ(ppa-9*ddx'
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY')
+
+DEBUG = False
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'tracked-production.up.railway.app']
 
 INSTALLED_APPS = [
@@ -30,6 +31,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://tracked-production.up.railway.app',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -74,8 +79,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'

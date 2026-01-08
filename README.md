@@ -134,7 +134,7 @@ TRACKED is built for people who value:
 The design is inspired by professional tools with a monochrome aesthetic and subtle yellow accent for today's date.
 
 ## Database Schema
-
+![UML](uml.png)
 ### Models
 
 **User** (Django built-in)
