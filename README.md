@@ -1,6 +1,6 @@
 # TRACKED
 
-A minimalist habit and life tracking application built with Django. Track what matters with a clean, Excel-like interface designed for serious professionals, athletes, and entrepreneurs.
+Frustrated with complex habit tracking apps, I built TRACKED to bring the simplicity of Excel spreadsheets to daily habit tracking. This full-stack Django application serves professionals who value speed and clarity over gamification.
 
 ![TRACKED Screenshot](screenshot.png)
 
@@ -199,9 +199,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-Your Name - [@yourtwitter](https://twitter.com/zohirhamid)
+Your Name - [@yourtwitter](https://twitter.com/zohirhamid72896)
 
-Project Link: [https://github.com/zohirhamid/tracked-app](https://github.com/zohirhamid/tracked-app)
+Project Link: [https://github.com/zohirhamid/tracked-app](https://github.com/zohirhamid/TRACKED)
 
 ---
 
