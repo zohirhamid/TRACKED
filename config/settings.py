@@ -9,7 +9,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '28&&2_i9hg7mt7g=oinht-u9_es^l_%6pf44*typ(ppa-9*ddx'
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'tracked-production.up.railway.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
