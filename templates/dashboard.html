@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Time Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f5;
+        }
+        .nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-brand { font-size: 1.5rem; font-weight: bold; }
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        a { color: #667eea; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-brand">⏱️ Time Tracker</div>
+        <div class="nav-user">
+            <span>{{ user.email }}</span>
+            {% if profile.avatar_url %}
+                <img src="{{ profile.avatar_url }}" class="avatar">
+            {% endif %}
+            <a href="{% url 'account_logout' %}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1>Welcome, {{ google_data.given_name|default:"User" }}!</h1>
+            <p style="color: #666; margin-top: 0.5rem;">
+                You're logged in with {{ user.email }}
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Your Dashboard</h2>
+            <p style="color: #666; margin-top: 1rem;">
+                Start building your time tracking features here!
+            </p>
+        </div>
+    </div>
+</body>
+</html>
