@@ -223,19 +223,10 @@ h1 {
    USER MENU
    ============================================ */
 
-.user-menu {
+.user-info {
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    position: relative;
-    cursor: pointer;
-    padding: var(--space-xs) var(--space-md);
-    border-radius: var(--radius-md);
-    transition: background var(--transition-base);
-}
-
-.user-menu:hover {
-    background: var(--bg-tertiary);
 }
 
 .user-avatar {
@@ -258,34 +249,24 @@ h1 {
     color: var(--text-primary);
 }
 
-.user-dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: var(--space-sm);
-    background: var(--bg-white);
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    min-width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
-.user-menu:hover .user-dropdown {
-    display: block;
-}
-
-.dropdown-item {
-    display: block;
-    padding: var(--space-md) var(--space-lg);
+.user-name {
     font-size: var(--font-size-sm);
+    font-weight: 500;
     color: var(--text-primary);
-    text-decoration: none;
-    transition: background var(--transition-base);
-}
-
-.dropdown-item:hover {
-    background: var(--bg-secondary);
 }
 
 /* ============================================
