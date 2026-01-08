@@ -4,37 +4,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}TRACKED{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    
+    {% block extra_css %}{% endblock %}
 </head>
-
 <body>
+    <!-- Header/Navbar -->
     <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <a href="{% url 'home' %}" style="text-decoration:none; color:inherit;">TRACKED</a>
+        <div class="header-container">
+            <!-- Left: Logo and Nav -->
+            <div class="header-left">
+                <a href="{% url 'tracker:home' %}" class="logo">
+                    <div class="logo-icon">T</div>
+                    <span class="logo-text">TRACKED</span>
+                </a>
+                
+                <nav class="nav">
+                    <a href="{% url 'tracker:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'month_view' %}active{% endif %}">
+                        <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Dashboard
+                    </a>
+                    <a href="{% url 'tracker:tracker_list' %}" class="nav-item {% if request.resolver_match.url_name == 'tracker_list' %}active{% endif %}">
+                        <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                        Trackers
+                    </a>
+                </nav>
             </div>
-            <div class="user-profile">
-                <div class="avatar">
-                    {% if user.is_authenticated %}
-                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-                    {% else %}
-                        GU
-                    {% endif %}
-                </div>
+            
+            <!-- Right: User -->
+            <div class="header-right">
+                {% if user.is_authenticated %}
+                    <div class="user-menu">
+                        <div class="user-avatar">{{ user.email|slice:":2"|upper }}</div>
+                        <span class="user-name">{{ user.first_name|default:user.email }}</span>
+                        <div class="user-dropdown">
+                            <a href="{% url 'logout' %}" class="dropdown-item">Logout</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="button-secondary">Login</a>
+                {% endif %}
             </div>
         </div>
     </header>
 
-    <main class="main-container">
-        {% block content %}
-        {% endblock %}
+    <!-- Main Content -->
+    <main class="main">
+        {% block content %}{% endblock %}
     </main>
 
-    <footer class="month-nav">
-        {% block month_nav %}
-        {% endblock %}
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2025 TRACKED. Built for serious tracking.</p>
+        </div>
     </footer>
+
+    <!-- Base JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
