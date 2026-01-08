@@ -2,10 +2,12 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from urllib.parse import urlparse, urlunparse, quote
 
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-your-secret-key-change-this-in-production'
+SECRET_KEY = '28&&2_i9hg7mt7g=oinht-u9_es^l_%6pf44*typ(ppa-9*ddx'
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -35,17 +37,18 @@ ROOT_URLCONF = 'config.urls'
 # DATABASE
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable not set!")
+
+# Try to parse and handle special characters
+try:
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+except Exception as e:
+    print(f"Error parsing DATABASE_URL: {e}")
+    print(f"DATABASE_URL value: {repr(DATABASE_URL)}")
+    raise
 
 TEMPLATES = [
     {
@@ -67,19 +70,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 STATIC_URL = '/static/'
