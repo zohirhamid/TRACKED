@@ -71,8 +71,7 @@ class Entry(models.Model):
     binary_value = models.BooleanField(null=True, blank=True)
     number_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     time_value = models.TimeField(null=True, blank=True)
-    duration_start = models.TimeField(null=True, blank=True)
-    duration_end = models.TimeField(null=True, blank=True)
+    duration_minutes = models.IntegerField(null=True, blank=True, help_text="Duration in minutes")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -85,3 +84,18 @@ class Entry(models.Model):
     
     def __str__(self):
         return f"{self.tracker.name} - {self.daily_snapshot.date}"
+
+    def get_duration_display(self):
+        """Format duration as '4h 30min' or '5h' or '45min'"""
+        if not self.duration_minutes:
+            return ""
+        
+        hours = self.duration_minutes // 60
+        minutes = self.duration_minutes % 60
+        
+        if hours > 0 and minutes > 0:
+            return f"{hours}h {minutes}min"
+        elif hours > 0:
+            return f"{hours}h"
+        else:
+            return f"{minutes}min"
