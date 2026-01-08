@@ -4,6 +4,9 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class Profile(models.Model):
+    """
+    Extra information about the user that django's user model doesn't have.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar_url = models.URLField(blank=True)
     google_id = models.CharField(max_length=100, blank=True)
@@ -13,6 +16,11 @@ class Profile(models.Model):
 
 
 class Tracker(models.Model):
+    """
+    Defines WHAT the user wants to track.
+    replaces the column header in Excel sheet.
+    """
+    id:int
     TYPE_CHOICES = [
         ('binary', 'Yes/No (Binary)'),
         ('number', 'Number'),
@@ -36,6 +44,10 @@ class Tracker(models.Model):
 
 
 class DailySnapshot(models.Model):
+    """
+    Represents ONE DAY for ONE USER. (a row in excel)
+    its a container that groups all entries for a certain day.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateField()
     overall_notes = models.TextField(blank=True)
@@ -50,6 +62,10 @@ class DailySnapshot(models.Model):
 
 
 class Entry(models.Model):
+    """
+    The ACTUAL DATA. This is the value in a cell of your Excel sheet.
+    """
+    id:int
     tracker = models.ForeignKey(Tracker, on_delete=models.CASCADE)
     daily_snapshot = models.ForeignKey(DailySnapshot, on_delete=models.CASCADE)
     binary_value = models.BooleanField(null=True, blank=True)
