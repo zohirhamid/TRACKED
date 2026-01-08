@@ -233,11 +233,14 @@ class EntryCreateUpdateView(LoginRequiredMixin, View):
         elif tracker.tracker_type == 'time':
             entry.time_value = datetime.strptime(data.get('time_value'), '%H:%M').time()
         elif tracker.tracker_type == 'duration':
-            entry.duration_start = datetime.strptime(data.get('duration_start'), '%H:%M').time()
-            entry.duration_end = datetime.strptime(data.get('duration_end'), '%H:%M').time()
-        
-        entry.save()
-        return JsonResponse({'success': True, 'entry_id': entry.id})
+            duration_minutes = data.get('duration_minutes')
+            if duration_minutes is not None:
+                entry.duration_minutes = int(duration_minutes)
+            else:
+                entry.duration_minutes = None
+                
+                entry.save()
+                return JsonResponse({'success': True, 'entry_id': entry.id})
 
 
 class EntryDeleteView(LoginRequiredMixin, View):
