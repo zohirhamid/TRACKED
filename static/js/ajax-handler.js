@@ -28,8 +28,7 @@ function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
                 data.time_value = value;
                 break;
             case 'duration':
-                data.duration_start = value.start;
-                data.duration_end = value.end;
+                data.duration_minutes = value;
                 break;
         }
     }
@@ -100,7 +99,20 @@ function updateCellDisplay(cell, trackerType, value, entryId) {
                 break;
             
             case 'duration':
-                valueDiv.innerHTML = `<span class="grid-duration">${value.start}-${value.end}</span>`;
+                // Convert minutes to display format
+                const hours = Math.floor(value / 60);
+                const mins = value % 60;
+                let displayText = '';
+                
+                if (hours > 0 && mins > 0) {
+                    displayText = `${hours}h ${mins}min`;
+                } else if (hours > 0) {
+                    displayText = `${hours}h`;
+                } else {
+                    displayText = `${mins}min`;
+                }
+                
+                valueDiv.innerHTML = `<span class="grid-duration">${displayText}</span>`;
                 break;
         }
         

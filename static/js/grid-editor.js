@@ -78,11 +78,17 @@ function getCurrentCellValue(cell, trackerType) {
             return timeText || '';
         case 'duration':
             const durationText = valueElement.textContent.trim();
-            if (durationText && durationText.includes('-')) {
-                const parts = durationText.split('-');
-                return { start: parts[0], end: parts[1] };
-            }
-            return { start: '', end: '' };
+            if (!durationText) return 0;
+            
+            // Parse "4h 30min" or "5h" or "45min"
+            let totalMinutes = 0;
+            const hourMatch = durationText.match(/(\d+)h/);
+            const minMatch = durationText.match(/(\d+)min/);
+            
+            if (hourMatch) totalMinutes += parseInt(hourMatch[1]) * 60;
+            if (minMatch) totalMinutes += parseInt(minMatch[1]);
+            
+            return totalMinutes;
         default:
             return '';
     }
@@ -129,24 +135,31 @@ function buildFormForType(type, currentValue) {
             `;
         
         case 'duration':
-            const start = currentValue?.start || '';
-            const end = currentValue?.end || '';
+            // Get current value in minutes
+            const currentMinutes = currentValue || 0;
+            const currentHours = Math.floor(currentMinutes / 60);
+            const currentMins = currentMinutes % 60;
+            
             return `
                 <div class="form-group">
-                    <label class="form-label">Start Time</label>
-                    <input type="time" 
-                           class="form-input" 
-                           id="editValueStart" 
-                           value="${start}"
-                           placeholder="HH:MM">
+                    <label class="form-label">Hours</label>
+                    <input type="number" 
+                        min="0"
+                        max="24"
+                        class="form-input" 
+                        id="editValueHours" 
+                        value="${currentHours}"
+                        placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">End Time</label>
-                    <input type="time" 
-                           class="form-input" 
-                           id="editValueEnd" 
-                           value="${end}"
-                           placeholder="HH:MM">
+                    <label class="form-label">Minutes</label>
+                    <input type="number" 
+                        min="0"
+                        max="59"
+                        class="form-input" 
+                        id="editValueMinutes" 
+                        value="${currentMins}"
+                        placeholder="0">
                 </div>
             `;
         
@@ -188,9 +201,9 @@ function saveEntry() {
             break;
         
         case 'duration':
-            const start = document.getElementById('editValueStart').value;
-            const end = document.getElementById('editValueEnd').value;
-            value = (start && end) ? { start, end } : null;
+            const hours = parseInt(document.getElementById('editValueHours').value) || 0;
+            const minutes = parseInt(document.getElementById('editValueMinutes').value) || 0;
+            value = hours * 60 + minutes;  // Convert to total minutes
             break;
     }
     
