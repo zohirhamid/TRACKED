@@ -17,7 +17,9 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'tracked-production.up.railway.app']
+    'tracked-production.up.railway.app',
+    '.railway.app',
+]
 
 # API KEYS
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -52,23 +54,6 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# SECURITY
-CSRF_TRUSTED_ORIGINS = [
-    'https://tracked-production.up.railway.app',
-]
-
-# DATABASE CONFIGURATION
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable not set!")
-
-DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
 
 # TEMPLATES
 TEMPLATES = [
@@ -87,26 +72,42 @@ TEMPLATES = [
     },
 ]
 
+# DATABASE CONFIGURATION
+USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False') == 'True'
+
+if USE_POSTGRES:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# STATIC FILES CONFIGURATION
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# ADDITIONAL LOCATIONS OF STATIC FILES
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# WHITENOISE CONFIG
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # INTERNATIONALIZATION
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-
-# STATIC FILES CONFIGURATION
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# WhiteNoise configuration for serving static files in production
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
 
 # Authentication URLs
 LOGIN_REDIRECT_URL = '/'
