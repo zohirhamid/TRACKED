@@ -72,6 +72,11 @@ TEMPLATES = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://tracked-production.up.railway.app',
+    'https://*.railway.app',
+]
+
 # DATABASE CONFIGURATION
 USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False') == 'True'
 
