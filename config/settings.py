@@ -21,6 +21,12 @@ ALLOWED_HOSTS = [
     '.railway.app',
 ]
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    'https://tracked-production.up.railway.app',
+    'https://*.railway.app',
+]
+
 # API KEYS
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
@@ -72,10 +78,6 @@ TEMPLATES = [
     },
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://tracked-production.up.railway.app',
-    'https://*.railway.app',
-]
 
 # DATABASE CONFIGURATION
 USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False') == 'True'
