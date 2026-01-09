@@ -193,7 +193,7 @@ class EntryCreateUpdateView(LoginRequiredMixin, View):
     
     def post(self, request):
         try:
-            data = json.loads(request.body)  # Changed from request.POST
+            data = json.loads(request.body)
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON'})
         
@@ -238,9 +238,9 @@ class EntryCreateUpdateView(LoginRequiredMixin, View):
                 entry.duration_minutes = int(duration_minutes)
             else:
                 entry.duration_minutes = None
-                
-                entry.save()
-                return JsonResponse({'success': True, 'entry_id': entry.id})
+
+        entry.save()
+        return JsonResponse({'success': True, 'entry_id': entry.id})
 
 
 class EntryDeleteView(LoginRequiredMixin, View):
