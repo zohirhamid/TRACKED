@@ -28,6 +28,7 @@
                     <span class="logo-text">TRACKED</span>
                 </a>
                 
+                {% if user.is_authenticated %}
                 <nav class="nav">
                     <a href="{% url 'tracker:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'month_view' %}active{% endif %}">
                         <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -50,6 +51,8 @@
                         Trackers
                     </a>
                 </nav>
+                {% endif %}
+
             </div>
             
             <!-- Right: User -->
