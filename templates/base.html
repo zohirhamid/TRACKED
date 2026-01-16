@@ -62,14 +62,14 @@
                         <div class="user-avatar">{{ user.email|slice:":2"|upper }}</div>
                         <span class="user-name">{{ user.first_name|default:user.username }}</span>
                     </div>
-                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                    <form method="post" action="{% url 'account_logout' %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="button-secondary" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">
                             Logout
                         </button>
                     </form>
                 {% else %}
-                    <a href="{% url 'login' %}" class="button-secondary">Login</a>
+                    <a href="{% url 'account_login' %}" class="button-secondary">Login</a>
                 {% endif %}
             </div>
         </div>
