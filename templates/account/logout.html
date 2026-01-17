@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logout - TRACKED{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 400px; margin-top: var(--space-3xl);">
+    <div class="text-center mb-2xl">
+        <div class="logo-icon" style="width: 48px; height: 48px; margin: 0 auto var(--space-lg); font-size: 20px;">T</div>
+        <h1 class="page-title">Come back soon</h1>
+        <p style="color: var(--text-secondary); margin-top: var(--space-sm);">
+            Are you sure you want to logout?
+        </p>
+    </div>
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <button type="submit" class="button-primary" style="width: 100%; margin-bottom: var(--space-md);">
+                Yes, Logout
+            </button>
+            
+            <a href="/" class="button-primary" style="width: 100%; display: block; text-align: center; background: white; color: var(--text-primary); border: 1px solid var(--border-primary);">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

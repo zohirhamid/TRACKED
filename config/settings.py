@@ -42,13 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
+    # Third-party
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    
+
     # Local apps
     'tracker',
+    'accounts',
 ]
 
 # MIDDLEWARE
@@ -64,16 +66,35 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 ]
 
-# Authentication backends
+# AUTHENTICATION BACKENDS
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+# SITES FRAMEWORK
 SITE_ID = 1
 
-# Allauth settings
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+# ─────────────────────────────────────────────
+# ALLAUTH CORE SETTINGS
+# ─────────────────────────────────────────────
+ACCOUNT_LOGIN_METHODS = {'username'}
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+ACCOUNT_SIGNUP_FIELDS = [
+    'username*',
+    'password1*',
+    'password2*',
+    # 'email',
+]
+
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'
+
+# ─────────────────────────────────────────────
+# SOCIAL AUTH (GOOGLE)
+# ─────────────────────────────────────────────
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
@@ -90,16 +111,15 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# URL & WSGI CONFIGURATION
+# URL & WSGI
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
-
 
 # TEMPLATES
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates',],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -112,8 +132,7 @@ TEMPLATES = [
     },
 ]
 
-
-# DATABASE CONFIGURATION
+# DATABASE
 USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False') == 'True'
 
 if USE_POSTGRES:
@@ -132,16 +151,10 @@ else:
         }
     }
 
-# STATIC FILES CONFIGURATION
+# STATIC FILES
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# ADDITIONAL LOCATIONS OF STATIC FILES
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-
-# WHITENOISE CONFIG
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # INTERNATIONALIZATION
@@ -150,12 +163,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Authentication URLs
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
-LOGIN_URL = '/accounts/login/'
-
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# EMAIL (DEV)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # OTHER
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
