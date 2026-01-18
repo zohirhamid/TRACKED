@@ -10,6 +10,10 @@ import json
 from .models import Tracker, DailySnapshot, Entry
 
 
+class LandingPageView(TemplateView):
+    template_name = 'landing_page.html'
+
+
 class HomePageView(LoginRequiredMixin, TemplateView):
     """Landing page - redirects to current month's tracking view"""
     template_name = 'tracker/home.html'

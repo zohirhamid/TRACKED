@@ -1,0 +1,106 @@
+<!-- templates/includes/navbar.html -->
+{% load static %}
+
+<header class="header" role="banner">
+    <div class="header-container">
+        <a href="{% if user.is_authenticated %}{% url 'tracker:home' %}{% else %}/{% endif %}" class="logo" aria-label="TRACKED - Go to homepage">
+            <div class="logo-icon" aria-hidden="true">T</div>
+            <span class="logo-text">TRACKED</span>
+        </a>
+        
+        {% if user.is_authenticated %}
+            <!-- Authenticated User Navigation -->
+            <nav class="nav" aria-label="Main navigation">
+                <a href="{% url 'tracker:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'month_view' %}active{% endif %}">
+                    <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{% url 'tracker:tracker_list' %}" class="nav-item {% if request.resolver_match.url_name == 'tracker_list' %}active{% endif %}">
+                    <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Trackers
+                </a>
+            </nav>
+            
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-avatar">{{ user.email|slice:":2"|upper }}</div>
+                    <span class="user-name">{{ user.first_name|default:user.username }}</span>
+                </div>
+                <form method="post" action="{% url 'account_logout' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="button-secondary" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">
+                        Logout
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <!-- Guest/Landing Page Navigation -->
+            <nav class="nav" aria-label="Main navigation">
+                <ul class="nav-links">
+                    <li class="nav-item">
+                        <a href="#features" class="nav-link">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#how-it-works" class="nav-link">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Pricing</a>
+                    </li>
+                </ul>
+                
+                <div class="nav-divider" aria-hidden="true"></div>
+                
+                <div class="nav-actions">
+                    <a href="{% url 'account_login' %}" class="button-text">Sign In</a>
+                    <a href="{% url 'account_signup' %}" class="button-primary">Get Started</a>
+                </div>
+            </nav>
+            
+            <!-- Mobile Menu Toggle -->
+            <button 
+                class="mobile-menu-toggle" 
+                aria-label="Open menu" 
+                aria-expanded="false" 
+                aria-controls="mobile-nav"
+            >
+                <span class="hamburger-line" aria-hidden="true"></span>
+                <span class="hamburger-line" aria-hidden="true"></span>
+                <span class="hamburger-line" aria-hidden="true"></span>
+            </button>
+        {% endif %}
+    </div>
+    
+    {% if not user.is_authenticated %}
+        <!-- Mobile Navigation Drawer (Landing Page Only) -->
+        <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation" aria-hidden="true">
+            <ul class="mobile-nav-links">
+                <li>
+                    <a href="#features" class="mobile-nav-link">Features</a>
+                </li>
+                <li>
+                    <a href="#how-it-works" class="mobile-nav-link">How It Works</a>
+                </li>
+                <li>
+                    <a href="#" class="mobile-nav-link">Pricing</a>
+                </li>
+            </ul>
+            
+            <div class="mobile-nav-actions">
+                <a href="{% url 'account_login' %}" class="button-secondary">Sign In</a>
+                <a href="{% url 'account_signup' %}" class="button-primary">Get Started Free</a>
+            </div>
+        </nav>
+    {% endif %}
+</header>

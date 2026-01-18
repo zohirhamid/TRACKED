@@ -8,13 +8,15 @@ from .views import (
     TrackerDeleteView,
     EntryCreateUpdateView,
     EntryDeleteView,
+    LandingPageView,
 )
 
 app_name = 'tracker'
 
 urlpatterns = [
     # Main dashboard - shows current month
-    path('', HomePageView.as_view(), name='home'),
+    path('', LandingPageView.as_view(), name='landing'),
+    path('home/', HomePageView.as_view(), name='home'),
     
     # Month view - Excel-like grid for specific month
     path('<int:year>/<int:month>/', MonthView.as_view(), name='month_view'),

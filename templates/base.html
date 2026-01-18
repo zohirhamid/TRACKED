@@ -19,61 +19,7 @@
 </head>
 <body>
     <!-- Header/Navbar -->
-    <header class="header">
-        <div class="header-container">
-            <!-- Left: Logo and Nav -->
-            <div class="header-left">
-                <a href="{% url 'tracker:home' %}" class="logo">
-                    <div class="logo-icon">T</div>
-                    <span class="logo-text">TRACKED</span>
-                </a>
-                
-                {% if user.is_authenticated %}
-                <nav class="nav">
-                    <a href="{% url 'tracker:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'month_view' %}active{% endif %}">
-                        <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        Dashboard
-                    </a>
-                    <a href="{% url 'tracker:tracker_list' %}" class="nav-item {% if request.resolver_match.url_name == 'tracker_list' %}active{% endif %}">
-                        <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                        </svg>
-                        Trackers
-                    </a>
-                </nav>
-                {% endif %}
-
-            </div>
-            
-            <!-- Right: User -->
-            <div class="header-right">
-                {% if user.is_authenticated %}
-                    <div class="user-info">
-                        <div class="user-avatar">{{ user.email|slice:":2"|upper }}</div>
-                        <span class="user-name">{{ user.first_name|default:user.username }}</span>
-                    </div>
-                    <form method="post" action="{% url 'account_logout' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="button-secondary" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">
-                            Logout
-                        </button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'account_login' %}" class="button-secondary">Login</a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
+    {% include 'components/_navbar.html' %}
 
     <!-- Main Content -->
     <main class="main">

@@ -1,0 +1,350 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKED - Professional Habit Tracking</title>
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing_page.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    {% include 'components/_navbar.html' %}
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-container">
+                <div class="hero-badge">Built for serious tracking</div>
+                <h1 class="hero-title">Track Your Habits.<br>Build Better Routines.</h1>
+                <p class="hero-subtitle">
+                    TRACKED is a professional habit tracking tool designed for people who want to 
+                    build consistent routines and measure their progress with clarity and precision.
+                </p>
+                <div class="hero-cta">
+                    <a href="{% url 'account_signup' %}" class="button-primary">Get Started Free</a>
+                    <a href="#how-it-works" class="button-secondary">Learn More</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <div class="features-container">
+                <div class="section-header">
+                    <h2 class="section-title">Everything You Need to Stay Consistent</h2>
+                    <p class="section-subtitle">Powerful features designed for simplicity and effectiveness</p>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Monthly Grid View</h3>
+                        <p class="feature-description">
+                            See your entire month at a glance. Track multiple habits side-by-side with an intuitive grid layout.
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Multiple Tracker Types</h3>
+                        <p class="feature-description">
+                            Binary checkmarks, numbers, time tracking, and duration. Choose the right type for each habit.
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Weekly Summaries</h3>
+                        <p class="feature-description">
+                            Automatic weekly statistics help you understand patterns and stay on track with your goals.
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Quick Entry</h3>
+                        <p class="feature-description">
+                            Click any day to log your habits. Fast, simple data entry keeps you focused on what matters.
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Custom Units</h3>
+                        <p class="feature-description">
+                            Track anything with custom units. Water in liters, exercise in minutes, or mood on a scale.
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M18 20V10"></path>
+                                <path d="M12 20V4"></path>
+                                <path d="M6 20v-6"></path>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Completion Tracking</h3>
+                        <p class="feature-description">
+                            Monitor your progress with completion rates and see how many days you've successfully tracked.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Preview Section -->
+        <section class="preview">
+            <div class="preview-container">
+                <div class="section-header">
+                    <h2 class="section-title">Clean, Professional Interface</h2>
+                    <p class="section-subtitle">Designed to get out of your way and let you focus on building habits</p>
+                </div>
+                <div class="preview-image">
+                    <div class="preview-placeholder">
+                        <img src="{% static 'images/screenshot.png' %}" alt="preview">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works" id="how-it-works">
+            <div class="how-it-works-container">
+                <div class="section-header">
+                    <h2 class="section-title">How It Works</h2>
+                    <p class="section-subtitle">Get started in three simple steps</p>
+                </div>
+                
+                <div class="steps-grid">
+                    <div class="step">
+                        <div class="step-number" aria-hidden="true">1</div>
+                        <h3 class="step-title">Create Your Trackers</h3>
+                        <p class="step-description">
+                            Define the habits you want to track. Choose the right tracker type and customize it to your needs.
+                        </p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number" aria-hidden="true">2</div>
+                        <h3 class="step-title">Log Daily Progress</h3>
+                        <p class="step-description">
+                            Click any day in the grid to record your habits. Quick entry makes tracking effortless.
+                        </p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number" aria-hidden="true">3</div>
+                        <h3 class="step-title">Review & Improve</h3>
+                        <p class="step-description">
+                            Use weekly summaries and completion rates to understand your patterns and stay consistent.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta">
+            <div class="cta-container">
+                <h2 class="cta-title">Start Building Better Habits Today</h2>
+                <p class="cta-subtitle">
+                    Join thousands of people using TRACKED to build consistent routines and achieve their goals.
+                </p>
+                <a href="{% url 'account_signup' %}" class="button-primary">Get Started Free</a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="footer-container">
+            <p class="footer-text">&copy; 2025 TRACKED. Built for serious tracking.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const mobileNav = document.querySelector('.mobile-nav');
+        const body = document.body;
+        
+        if (mobileMenuToggle && mobileNav) {
+            mobileMenuToggle.addEventListener('click', () => {
+                const isOpen = mobileMenuToggle.classList.toggle('active');
+                mobileNav.classList.toggle('active');
+                body.classList.toggle('menu-open');
+                
+                // Update ARIA attributes
+                mobileMenuToggle.setAttribute('aria-expanded', isOpen);
+                mobileMenuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+                mobileNav.setAttribute('aria-hidden', !isOpen);
+            });
+            
+            // Close mobile menu when clicking a link
+            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileNavLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenuToggle.classList.remove('active');
+                    mobileNav.classList.remove('active');
+                    body.classList.remove('menu-open');
+                    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+                    mobileMenuToggle.setAttribute('aria-label', 'Open menu');
+                    mobileNav.setAttribute('aria-hidden', 'true');
+                });
+            });
+        }
+        
+        // Mobile Dropdown Toggle
+        const mobileDropdownToggles = document.querySelectorAll('.mobile-dropdown-toggle');
+        mobileDropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const parent = toggle.closest('.mobile-nav-item');
+                const isOpen = parent.classList.toggle('open');
+                toggle.setAttribute('aria-expanded', isOpen);
+            });
+        });
+        
+        // Desktop Dropdown Keyboard Navigation
+        const navDropdowns = document.querySelectorAll('.nav-item');
+        navDropdowns.forEach(item => {
+            const link = item.querySelector('.nav-link-dropdown');
+            const dropdown = item.querySelector('.nav-dropdown');
+            
+            if (link && dropdown) {
+                // Toggle on Enter/Space
+                link.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const isExpanded = link.getAttribute('aria-expanded') === 'true';
+                        link.setAttribute('aria-expanded', !isExpanded);
+                    }
+                });
+                
+                // Close on Escape
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        link.setAttribute('aria-expanded', 'false');
+                        link.focus();
+                    }
+                });
+            }
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        const header = document.querySelector('.header');
+        
+        if (header) {
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+        }
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animation
+        document.querySelectorAll('.step, .preview-image').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+        
+        // Set active nav link based on current section
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        const setActiveLink = () => {
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                if (window.pageYOffset >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', setActiveLink);
+        setActiveLink();
+    </script>
+</body>
+</html>
