@@ -27,6 +27,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     'https://tracked-production.up.railway.app',
     'https://*.railway.app',
+    'https://tracked.zohirhamid.com',
 ]
 
 # API KEYS
