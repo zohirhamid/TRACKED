@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [
     '0.0.0.0',
     'tracked-production.up.railway.app',
     '.railway.app',
+    'tracked.zohirhamid.com',
 ]
 
 # CSRF Configuration
