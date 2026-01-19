@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'tracker',
-    'accounts',
+    'core',
 ]
 
 # MIDDLEWARE
@@ -81,7 +81,11 @@ SITE_ID = 1
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Force Allauth to use HTTPS
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+# and Use HTTPS only in production
+if DEBUG:
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
+else:
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 # ─────────────────────────────────────────────
 # ALLAUTH CORE SETTINGS
