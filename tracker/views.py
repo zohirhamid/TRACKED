@@ -88,11 +88,42 @@ class MonthView(LoginRequiredMixin, TemplateView):
                         stats[tracker.id] = f"{avg:.1f}"
                     else:
                         stats[tracker.id] = "—"
+                elif tracker.tracker_type == 'rating':
+                    # Calculate average rating
+                    values = [d['entries'][tracker.id].rating_value 
+                            for d in week_days 
+                            if d['entries'].get(tracker.id) 
+                            and d['entries'][tracker.id].rating_value is not None]
+                    if values:
+                        avg = sum(values) / len(values)
+                        stats[tracker.id] = f"{avg:.1f}"
+                    else:
+                        stats[tracker.id] = "—"
+                        
+                elif tracker.tracker_type == 'multiselect':
+                    # Count total selections / possible selections
+                    total_selected = sum(len(d['entries'][tracker.id].multiselect_value or [])
+                                       for d in week_days 
+                                       if d['entries'].get(tracker.id))
+                    total_possible = len(week_days) * len(tracker.multiselect_options or [])
+                    if total_possible > 0:
+                        stats[tracker.id] = f"{total_selected}/{total_possible}"
+                    else:
+                        stats[tracker.id] = "—"
+
                 elif tracker.tracker_type in ['time', 'duration']:
                     # Count tracked days
                     count = sum(1 for d in week_days 
                             if d['entries'].get(tracker.id))
                     stats[tracker.id] = f"{count}/{len(week_days)}"
+                
+                elif tracker.tracker_type == 'text':
+                    # Count days with text entries
+                    count = sum(1 for d in week_days 
+                            if d['entries'].get(tracker.id) 
+                            and d['entries'][tracker.id].text_value)
+                    stats[tracker.id] = f"{count}/{len(week_days)}"
+
                 else:
                     stats[tracker.id] = "—"
             
@@ -148,7 +179,8 @@ class TrackerCreateView(LoginRequiredMixin, CreateView):
     """Form to create a new tracker"""
     model = Tracker
     template_name = 'tracker/tracker_form.html'
-    fields = ['name', 'tracker_type', 'unit', 'display_order', 'is_active']
+    fields = ['name', 'tracker_type', 'unit', 'display_order', 'is_active', 
+          'min_value', 'max_value', 'multiselect_options']
     success_url = reverse_lazy('tracker:tracker_list')
     
     def form_valid(self, form):
@@ -160,7 +192,8 @@ class TrackerUpdateView(LoginRequiredMixin, UpdateView):
     """Form to edit an existing tracker"""
     model = Tracker
     template_name = 'tracker/tracker_form.html'
-    fields = ['name', 'tracker_type', 'unit', 'display_order', 'is_active']
+    fields = ['name', 'tracker_type', 'unit', 'display_order', 'is_active',
+          'min_value', 'max_value', 'multiselect_options']
     success_url = reverse_lazy('tracker:tracker_list')
     
     def get_queryset(self):
@@ -223,6 +256,14 @@ class EntryCreateUpdateView(LoginRequiredMixin, View):
             tracker=tracker,
             daily_snapshot=snapshot
         )
+
+        entry.binary_value = None
+        entry.number_value = None
+        entry.time_value = None
+        entry.duration_minutes = None
+        entry.text_value = None
+        entry.rating_value = None
+        entry.multiselect_value = None
         
         # Set values based on tracker type
         if tracker.tracker_type == 'binary':
@@ -237,6 +278,38 @@ class EntryCreateUpdateView(LoginRequiredMixin, View):
                 entry.duration_minutes = int(duration_minutes)
             else:
                 entry.duration_minutes = None
+        elif tracker.tracker_type == 'text':
+            entry.text_value = data.get('text_value', '')
+            
+        elif tracker.tracker_type == 'rating':
+            rating_val = data.get('rating_value')
+            if rating_val is not None:
+                rating_int = int(rating_val)
+                # Validate rating is within bounds
+                if tracker.min_value and rating_int < tracker.min_value:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Rating must be at least {tracker.min_value}'
+                    })
+                if tracker.max_value and rating_int > tracker.max_value:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Rating must be at most {tracker.max_value}'
+                    })
+                entry.rating_value = rating_int
+                
+        elif tracker.tracker_type == 'multiselect':
+            multiselect_val = data.get('multiselect_value')
+            if multiselect_val is not None:
+                # Validate that all selected options are valid
+                valid_options = tracker.multiselect_options or []
+                invalid_options = [opt for opt in multiselect_val if opt not in valid_options]
+                if invalid_options:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Invalid options: {", ".join(invalid_options)}'
+                    })
+                entry.multiselect_value = multiselect_val
 
         entry.save()
         return JsonResponse({'success': True, 'entry_id': entry.id})

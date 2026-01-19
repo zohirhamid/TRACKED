@@ -26,6 +26,9 @@ class Tracker(models.Model):
         ('number', 'Number'),
         ('time', 'Time'),
         ('duration', 'Duration (Start/End Time)'),
+        ('text', 'Text/Notes'),
+        ('rating', 'Rating/Scale'),
+        ('multiselect', 'Multi-Select'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -35,7 +38,14 @@ class Tracker(models.Model):
     display_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Rating-specific fields
+    min_value = models.IntegerField(null=True, blank=True, help_text="Minimum rating value (e.g., 1)")
+    max_value = models.IntegerField(null=True, blank=True, help_text="Maximum rating value (e.g., 5 or 10)")
     
+    # Multi-select specific fields
+    multiselect_options = models.JSONField(null=True, blank=True, help_text="List of options for multi-select")
+
     class Meta:
         ordering = ['display_order', 'name']
     
@@ -73,6 +83,10 @@ class Entry(models.Model):
     time_value = models.TimeField(null=True, blank=True)
     duration_minutes = models.IntegerField(null=True, blank=True, help_text="Duration in minutes")
     
+    text_value = models.TextField(null=True, blank=True, help_text="For text/notes tracker")
+    rating_value = models.IntegerField(null=True, blank=True, help_text="For rating tracker")
+    multiselect_value = models.JSONField(null=True, blank=True, help_text="Selected options as list")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -99,3 +113,18 @@ class Entry(models.Model):
             return f"{hours}h"
         else:
             return f"{minutes}min"
+    
+    def get_multiselect_display(self):
+        """Format multiselect as comma-separated string"""
+        if not self.multiselect_value:
+            return ""
+        return ", ".join(self.multiselect_value)
+    
+    def get_rating_display(self):
+        """Format rating with context from tracker"""
+        if self.rating_value is None:
+            return ""
+        
+        if self.tracker.min_value and self.tracker.max_value:
+            return f"{self.rating_value}/{self.tracker.max_value}"
+        return str(self.rating_value)
