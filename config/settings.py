@@ -77,6 +77,12 @@ AUTHENTICATION_BACKENDS = [
 # SITES FRAMEWORK
 SITE_ID = 1
 
+# Tell Django that Railway is using HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Force Allauth to use HTTPS
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
 # ─────────────────────────────────────────────
 # ALLAUTH CORE SETTINGS
 # ─────────────────────────────────────────────
@@ -91,8 +97,8 @@ ACCOUNT_SIGNUP_FIELDS = [
 ]
 
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/accounts/login/'
 
 # ─────────────────────────────────────────────
 # SOCIAL AUTH (GOOGLE)
@@ -109,7 +115,6 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {
             'access_type': 'online',
         },
-        'FETCH_USERINFO': True,
     }
 }
 
