@@ -99,15 +99,86 @@
                 </svg>
             </div>
             <h3>No trackers yet</h3>
-            <p>Create your first tracker to start tracking your daily habits.</p>
+            <p>Quick add some popular habits or create your own.</p>
+            
+            <!-- Suggested Trackers -->
+            {% if suggested_trackers %}
+            <div class="suggested-trackers">
+                <p class="suggested-label">Popular habits:</p>
+                <div class="suggested-grid">
+                    {% for tracker in suggested_trackers %}
+                    <button class="suggested-btn" 
+                            data-slug="{{ tracker.name|lower|slugify }}"
+                            onclick="quickAddTracker('{{ tracker.name|lower|slugify }}', this)">
+                        <span class="suggested-icon">{{ tracker.icon }}</span>
+                        <span class="suggested-name">{{ tracker.name }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Added count and done button -->
+            <div id="addedSection" class="added-section" style="display: none;">
+                <p class="added-count"><span id="addedCount">0</span> tracker(s) added</p>
+                <button onclick="location.reload()" class="button-primary">
+                    Done - View My Trackers
+                </button>
+            </div>
+            {% endif %}
+            
+            <div class="empty-state-divider">
+                <span>or</span>
+            </div>
+            
             <a href="{% url 'tracker:tracker_create' %}" class="button-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                Create Tracker
+                Create Custom Tracker
             </a>
         </div>
     {% endif %}
 </div>
+
+<script>
+let addedCount = 0;
+
+function quickAddTracker(slug, button) {
+    button.disabled = true;
+    button.classList.add('loading');
+    
+    fetch(`/tracker/trackers/quick-add/${slug}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            button.classList.remove('loading');
+            button.classList.add('added');
+            button.innerHTML = '<span class="suggested-icon">✓</span><span class="suggested-name">Added!</span>';
+            
+            // Update counter
+            addedCount++;
+            document.getElementById('addedCount').textContent = addedCount;
+            document.getElementById('addedSection').style.display = 'block';
+            
+        } else {
+            showToast(data.error || 'Failed to add tracker', 'error');
+            button.disabled = false;
+            button.classList.remove('loading');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+        button.disabled = false;
+        button.classList.remove('loading');
+    });
+}
+</script>
 {% endblock %}

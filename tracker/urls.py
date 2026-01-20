@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     HomePageView,
     MonthView,
+    QuickAddTrackerView,
     TrackerListView,
     TrackerCreateView,
     TrackerUpdateView,
@@ -28,4 +29,7 @@ urlpatterns = [
     # Entry management (for creating/editing cell data)
     path('entry/save/', EntryCreateUpdateView.as_view(), name='entry_save'),
     path('entry/<int:pk>/delete/', EntryDeleteView.as_view(), name='entry_delete'),
+
+    path('trackers/quick-add/<slug:slug>/', QuickAddTrackerView.as_view(), name='quick_add_tracker'),
+
 ]

@@ -200,6 +200,106 @@ h1 {
 .mb-2xl { margin-bottom: var(--space-2xl); }
 
 /* ============================================
+   SUGGESTED TRACKERS
+   ============================================ */
+
+.suggested-trackers {
+    margin: var(--space-xl) 0;
+}
+
+.suggested-label {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+    font-size: var(--font-size-sm);
+}
+
+.suggested-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    justify-content: center;
+}
+
+.suggested-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.suggested-btn:hover {
+    border-color: var(--accent-black);
+    background: var(--bg-white);
+}
+
+.suggested-btn.added {
+    border-color: var(--success-green);
+    background: var(--success-bg);
+    color: var(--success-dark);
+}
+
+.suggested-btn.loading {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.suggested-btn:disabled {
+    cursor: not-allowed;
+}
+
+.suggested-icon {
+    font-size: var(--font-size-lg);
+}
+
+.suggested-name {
+    font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   ADDED SECTION
+   ============================================ */
+
+.added-section {
+    margin: var(--space-xl) 0;
+    padding: var(--space-lg);
+    background: var(--success-bg);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.added-count {
+    color: var(--success-dark);
+    font-weight: 500;
+    margin-bottom: var(--space-md);
+}
+
+/* ============================================
+   EMPTY STATE DIVIDER
+   ============================================ */
+
+.empty-state-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin: var(--space-xl) 0;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-sm);
+}
+
+.empty-state-divider::before,
+.empty-state-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-primary);
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
