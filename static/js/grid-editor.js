@@ -38,6 +38,7 @@ function handleCellClick(e) {
 
 // Open edit modal
 function openEditModal(trackerId, trackerType, date, entryId, cell) {
+    console.log('trackerType:', trackerType);
     const modal = document.getElementById('editModal');
     const formContent = document.getElementById('editFormContent');
     
@@ -56,7 +57,7 @@ function openEditModal(trackerId, trackerType, date, entryId, cell) {
     modal.style.display = 'flex';
     
     // Focus first input
-    const firstInput = formContent.querySelector('input, select');
+    const firstInput = formContent.querySelector('input, select, textarea');
     if (firstInput) {
         setTimeout(() => firstInput.focus(), 100);
     }
@@ -70,17 +71,19 @@ function getCurrentCellValue(cell, trackerType) {
     switch(trackerType) {
         case 'binary':
             return cell.querySelector('.grid-check') ? true : false;
+        
         case 'number':
             const numText = valueElement.textContent.trim();
             return numText ? parseFloat(numText) : '';
+        
         case 'time':
             const timeText = valueElement.textContent.trim();
             return timeText || '';
+        
         case 'duration':
             const durationText = valueElement.textContent.trim();
             if (!durationText) return 0;
             
-            // Parse "4h 30min" or "5h" or "45min"
             let totalMinutes = 0;
             const hourMatch = durationText.match(/(\d+)h/);
             const minMatch = durationText.match(/(\d+)min/);
@@ -89,6 +92,15 @@ function getCurrentCellValue(cell, trackerType) {
             if (minMatch) totalMinutes += parseInt(minMatch[1]);
             
             return totalMinutes;
+        
+        case 'text':
+            const textElement = cell.querySelector('.grid-text');
+            return textElement ? textElement.getAttribute('title') || textElement.textContent.trim() : '';
+        
+        case 'rating':
+            const ratingText = valueElement.textContent.trim();
+            return ratingText ? parseInt(ratingText.split('/')[0]) : '';
+        
         default:
             return '';
     }
@@ -135,7 +147,6 @@ function buildFormForType(type, currentValue) {
             `;
         
         case 'duration':
-            // Get current value in minutes
             const currentMinutes = currentValue || 0;
             const currentHours = Math.floor(currentMinutes / 60);
             const currentMins = currentMinutes % 60;
@@ -163,6 +174,36 @@ function buildFormForType(type, currentValue) {
                 </div>
             `;
         
+        case 'text':
+            return `
+                <div class="form-group">
+                    <label class="form-label">Text/Notes</label>
+                    <textarea class="form-input" 
+                              id="editValue" 
+                              rows="4"
+                              placeholder="Enter your notes...">${currentValue || ''}</textarea>
+                </div>
+            `;
+        
+        case 'rating':
+            const cell = currentEditingCell;
+            const minValue = parseInt(cell.getAttribute('data-min-value')) || 1;
+            const maxValue = parseInt(cell.getAttribute('data-max-value')) || 5;
+            
+            let options = '<option value="">Not rated</option>';
+            for (let i = minValue; i <= maxValue; i++) {
+                options += `<option value="${i}" ${currentValue === i ? 'selected' : ''}>${i}</option>`;
+            }
+            
+            return `
+                <div class="form-group">
+                    <label class="form-label">Rating (${minValue}-${maxValue})</label>
+                    <select class="form-select" id="editValue">
+                        ${options}
+                    </select>
+                </div>
+            `;
+        
         default:
             return '<p>Unknown tracker type</p>';
     }
@@ -182,7 +223,6 @@ function saveEntry() {
     const entryId = document.getElementById('editEntryId').value;
     const trackerType = currentEditingCell.dataset.trackerType;
     
-    // Get value based on type
     let value = null;
     
     switch(trackerType) {
@@ -203,7 +243,16 @@ function saveEntry() {
         case 'duration':
             const hours = parseInt(document.getElementById('editValueHours').value) || 0;
             const minutes = parseInt(document.getElementById('editValueMinutes').value) || 0;
-            value = hours * 60 + minutes;  // Convert to total minutes
+            value = hours * 60 + minutes;
+            break;
+        
+        case 'text':
+            value = document.getElementById('editValue').value || null;
+            break;
+        
+        case 'rating':
+            const ratingValue = document.getElementById('editValue').value;
+            value = ratingValue === '' ? null : parseInt(ratingValue);
             break;
     }
     
@@ -221,12 +270,10 @@ function saveEntry() {
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('editModal');
     if (modal && modal.style.display === 'flex') {
-        // Escape to close
         if (e.key === 'Escape') {
             closeEditModal();
         }
-        // Enter to save
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
             e.preventDefault();
             saveEntry();
         }

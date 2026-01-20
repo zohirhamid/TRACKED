@@ -3,9 +3,8 @@
 // ============================================
 
 function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
-    const url = '/entry/save/';  // Your Django URL
+    const url = '/tracker/entry/save/';
     
-    // Prepare data
     const data = {
         tracker_id: trackerId,
         date: date,
@@ -13,7 +12,6 @@ function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
         entry_id: entryId || null
     };
     
-    // Add value based on type
     if (value === null) {
         data.delete_entry = true;
     } else {
@@ -30,10 +28,15 @@ function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
             case 'duration':
                 data.duration_minutes = value;
                 break;
+            case 'text':
+                data.text_value = value;
+                break;
+            case 'rating':
+                data.rating_value = value;
+                break;
         }
     }
     
-    // Make AJAX request
     fetch(url, {
         method: 'POST',
         headers: {
@@ -45,19 +48,11 @@ function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update cell display
             updateCellDisplay(currentEditingCell, trackerType, value, data.entry_id);
-            
-            // Show success
             showToast('Entry saved successfully', 'success');
-            
-            // Close modal
             closeEditModal();
         } else {
-            // Show error
             showToast(data.error || 'Failed to save entry', 'error');
-            
-            // Reset button
             resetSaveButton();
         }
     })
@@ -68,15 +63,10 @@ function saveEntryAjax(trackerId, date, trackerType, value, entryId) {
     });
 }
 
-// Update cell display after save
 function updateCellDisplay(cell, trackerType, value, entryId) {
-    // Update entry ID
     cell.dataset.entryId = entryId;
-    
-    // Clear existing content
     cell.innerHTML = '';
     
-    // Add new content based on value
     if (value === null) {
         cell.innerHTML = '<div class="grid-cell-empty">—</div>';
     } else {
@@ -99,7 +89,6 @@ function updateCellDisplay(cell, trackerType, value, entryId) {
                 break;
             
             case 'duration':
-                // Convert minutes to display format
                 const hours = Math.floor(value / 60);
                 const mins = value % 60;
                 let displayText = '';
@@ -114,19 +103,29 @@ function updateCellDisplay(cell, trackerType, value, entryId) {
                 
                 valueDiv.innerHTML = `<span class="grid-duration">${displayText}</span>`;
                 break;
+            
+            case 'text':
+                const truncated = value.split(' ').slice(0, 3).join(' ');
+                valueDiv.innerHTML = `<span class="grid-text" title="${value}">${truncated}</span>`;
+                break;
+            
+            case 'rating':
+                const minVal = cell.dataset.minValue;
+                const maxVal = cell.dataset.maxValue;
+                const display = (minVal && maxVal) ? `${value}/${maxVal}` : value;
+                valueDiv.innerHTML = `<span class="grid-rating">${display}</span>`;
+                break;
         }
         
         cell.appendChild(valueDiv);
     }
     
-    // Flash success animation
     cell.classList.add('saved');
     setTimeout(() => {
         cell.classList.remove('saved');
     }, 600);
 }
 
-// Reset save button state
 function resetSaveButton() {
     const saveButton = document.getElementById('saveButtonText');
     const spinner = document.getElementById('saveButtonSpinner');

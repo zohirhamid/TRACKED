@@ -1,13 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load tracker_extras %}
-
 {% block title %}{{ month_name }} {{ year }} - TRACKED{% endblock %}
-
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/grid.css' %}">
 {% endblock %}
-
 {% block content %}
 <div class="container">
     <!-- Month Navigation -->
@@ -36,7 +33,6 @@
             {% endfor %}
         </div>
     </div>
-
     <!-- Check if user has trackers -->
     {% if not trackers %}
         <div class="empty-state">
@@ -95,7 +91,11 @@
                                 data-tracker-id="{{ tracker.id }}"
                                 data-tracker-type="{{ tracker.tracker_type }}"
                                 data-date="{{ day.date|date:'Y-m-d' }}"
-                                data-entry-id="{% if entry %}{{ entry.id }}{% endif %}">
+                                data-entry-id="{% if entry %}{{ entry.id }}{% endif %}"
+                                {% if tracker.tracker_type == 'rating' %}
+                                data-min-value="{{ tracker.min_value }}"
+                                data-max-value="{{ tracker.max_value }}"
+                                {% endif %}>
                                 
                                 {% if entry %}
                                     <div class="grid-cell-value">
@@ -110,7 +110,12 @@
                                         {% elif tracker.tracker_type == 'time' %}
                                             <span class="grid-time">{{ entry.time_value|time:'H:i' }}</span>
                                         {% elif tracker.tracker_type == 'duration' %}
-                                            <span class="grid-duration">{{ entry.get_duration_display }}</span>                                        {% endif %}
+                                            <span class="grid-duration">{{ entry.get_duration_display }}</span>
+                                        {% elif tracker.tracker_type == 'text' %}
+                                            <span class="grid-text" title="{{ entry.text_value }}">{{ entry.text_value|truncatewords:3 }}</span>
+                                        {% elif tracker.tracker_type == 'rating' %}
+                                            <span class="grid-rating">{{ entry.get_rating_display }}</span>
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <div class="grid-cell-empty">—</div>
@@ -136,7 +141,6 @@
                 </tbody>
             </table>
         </div>
-
         <!-- Quick Stats (Optional) -->
         <div class="month-stats">
             <div class="stat-card">
@@ -150,7 +154,6 @@
         </div>
     {% endif %}
 </div>
-
 <!-- Edit Modal -->
 <div id="editModal" class="modal-overlay" style="display: none;">
     <div class="modal">
@@ -165,7 +168,6 @@
             <div id="editFormContent">
                 <!-- Dynamic form fields will be inserted here -->
             </div>
-
             <div class="modal-footer">
                 <button type="button" class="button-secondary" onclick="closeEditModal()">Cancel</button>
                 <button type="button" class="button-primary" onclick="saveEntry()">
@@ -177,7 +179,6 @@
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script src="{% static 'js/grid-editor.js' %}"></script>
 <script src="{% static 'js/ajax-handler.js' %}"></script>

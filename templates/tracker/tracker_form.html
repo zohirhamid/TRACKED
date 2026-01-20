@@ -41,6 +41,24 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label" for="{{ form.min_value.id_for_label }}">Min Value (Rating only)</label>
+                {{ form.min_value }}
+                {% if form.min_value.errors %}
+                    <span class="form-error">{{ form.min_value.errors.0 }}</span>
+                {% endif %}
+                <span class="form-help">For Rating type: minimum value (e.g., 1)</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.max_value.id_for_label }}">Max Value (Rating only)</label>
+                {{ form.max_value }}
+                {% if form.max_value.errors %}
+                    <span class="form-error">{{ form.max_value.errors.0 }}</span>
+                {% endif %}
+                <span class="form-help">For Rating type: maximum value (e.g., 5 or 10)</span>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label" for="{{ form.display_order.id_for_label }}">Display Order</label>
                 {{ form.display_order }}
                 {% if form.display_order.errors %}
@@ -51,7 +69,7 @@
 
             <div class="form-group">
                 <label class="form-label">
-                    <input type="checkbox" name="is_active" {% if form.instance.is_active %}checked{% endif %} style="margin-right: 8px;">
+                    <input type="checkbox" name="is_active" {% if form.instance.is_active or not form.instance.pk %}checked{% endif %} style="margin-right: 8px;">
                     Active
                 </label>
                 <span class="form-help">Inactive trackers won't show in your monthly grid</span>

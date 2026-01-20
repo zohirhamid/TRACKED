@@ -1,4 +1,5 @@
 from django import template
+import json
 
 register = template.Library()
 
@@ -23,3 +24,17 @@ def get_item(container, key):
             return None
     
     return None
+
+
+@register.filter
+def to_json(value):
+    """
+    Convert Python object to JSON string for use in data attributes.
+    Usage: {{ tracker.multiselect_options|to_json }}
+    """
+    if value is None:
+        return '[]'
+    try:
+        return json.dumps(value)
+    except (TypeError, ValueError):
+        return '[]'
