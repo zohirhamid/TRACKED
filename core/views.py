@@ -9,3 +9,4 @@ class LandingPageView(TemplateView):
         if request.user.is_authenticated:
             return redirect('tracker:home')
         return super().get(request, *args, **kwargs)
+

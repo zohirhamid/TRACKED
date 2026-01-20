@@ -42,3 +42,4 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('TRACKED initialized');
 });
+
