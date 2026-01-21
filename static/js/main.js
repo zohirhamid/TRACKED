@@ -43,3 +43,35 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('TRACKED initialized');
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const userMenu = document.querySelector('.user-menu');
+    const toggle = document.querySelector('.user-menu-toggle');
+    const dropdown = document.querySelector('.user-dropdown');
+    
+    if (!toggle || !userMenu) return;
+    
+    toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = userMenu.classList.toggle('active');
+        toggle.setAttribute('aria-expanded', isOpen);
+        dropdown.setAttribute('aria-hidden', !isOpen);
+    });
+    
+    // Close when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!userMenu.contains(e.target)) {
+            userMenu.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+            dropdown.setAttribute('aria-hidden', 'true');
+        }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && userMenu.classList.contains('active')) {
+            userMenu.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+            dropdown.setAttribute('aria-hidden', 'true');
+        }
+    });
+});
