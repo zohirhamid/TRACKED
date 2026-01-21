@@ -13,12 +13,14 @@ Frustrated with complex habit tracking apps, I built TRACKED to bring the simpli
 - **Clean Design** - Minimal, distraction-free interface with professional aesthetics
 - **Responsive** - Works on desktop and mobile devices
 - **Today Highlighting** - Current day automatically highlighted for quick reference
+- **Pro Subscriptions** - Stripe-powered subscriptions for unlimited habits
 
 ## Tech Stack
 
 - **Backend:** Django 5.2
 - **Database:** PostgreSQL
 - **Frontend:** HTML, CSS (Vanilla), JavaScript
+- **Payments:** Stripe (Checkout, Webhooks, Customer Portal)
 - **Design:** Custom design system with Inter font
 - **Deployment:** Railway (ready)
 
@@ -29,6 +31,7 @@ Frustrated with complex habit tracking apps, I built TRACKED to bring the simpli
 - Python 3.12+
 - PostgreSQL
 - pip and virtualenv
+- Stripe CLI (for local webhook testing)
 
 ### Local Setup
 
@@ -52,7 +55,23 @@ pip install -r requirements.txt
 4. **Set up environment variables**
 ```bash
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit .env with your credentials
+```
+
+Required environment variables:
+```
+SECRET_KEY=your-secret-key
+DEBUG=True
+
+# Database
+DATABASE_URL=postgres://...
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_PRICE_PRO_MONTHLY=price_xxx
+STRIPE_PRICE_PRO_YEARLY=price_xxx
 ```
 
 5. **Run migrations**
@@ -70,7 +89,36 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+8. **Run Stripe CLI (separate terminal)**
+```bash
+stripe listen --forward-to localhost:8000/payments/webhook/
+```
+Copy the webhook secret it displays and add to your `.env` as `STRIPE_WEBHOOK_SECRET`.
+
 Visit `http://localhost:8000` to see the app.
+
+## Stripe Setup
+
+### Test Mode
+
+1. Create a [Stripe account](https://dashboard.stripe.com/register)
+2. Get your test API keys from [Dashboard > API Keys](https://dashboard.stripe.com/test/apikeys)
+3. Create products and prices in [Dashboard > Products](https://dashboard.stripe.com/test/products)
+4. Install Stripe CLI for local webhook testing
+
+### Test Card
+```
+Number: 4242 4242 4242 4242
+Exp: Any future date
+CVC: Any 3 digits
+```
+
+### Production
+
+1. Switch to live mode in Stripe Dashboard
+2. Add webhook endpoint: `https://yourdomain.com/payments/webhook/`
+3. Subscribe to events: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`
+4. Update environment variables with live keys
 
 ## Usage
 
@@ -83,6 +131,8 @@ Visit `http://localhost:8000` to see the app.
    - **Type:** Binary, Number, Time, or Duration
    - **Unit:** Optional unit (e.g., "hours", "L", "/5")
    - **Display Order:** Controls column order in the grid
+
+**Note:** Free users are limited to 3 trackers. Upgrade to Pro for unlimited.
 
 ### Tracking Data
 
@@ -98,24 +148,37 @@ Visit `http://localhost:8000` to see the app.
 - **Time:** Single time values like "Wake up time"
 - **Duration:** Start and end times like "Sleep: 23:00 - 06:30"
 
+### Subscription Management
+
+- Upgrade to Pro from Settings or the Upgrade page
+- Manage billing, update payment methods, or cancel via the Customer Portal
+
 ## Project Structure
 ```
 tracked-app/
 ├── config/              # Django project settings
-├── tracker/             # Main app
-│   ├── models.py        # Database models
+├── tracker/             # Main tracking app
+│   ├── models.py        # Tracker, Entry, DailySnapshot
 │   ├── views.py         # View logic
 │   ├── urls.py          # URL routing
 │   └── templatetags/    # Custom template filters
+├── payments/            # Stripe integration
+│   ├── models.py        # Subscription model
+│   ├── views.py         # Checkout, webhook, billing portal
+│   └── urls.py          # Payment URLs
+├── core/                # Core app (landing, settings)
 ├── templates/           # HTML templates
 │   ├── base.html
-│   ├── tracker/         # Tracker-specific templates
-│   └── registration/    # Auth templates
+│   ├── tracker/
+│   ├── payments/
+│   └── core/
 ├── static/              # Static files
 │   ├── css/
-│   │   ├── base.css     # Design system
+│   │   ├── base.css
 │   │   ├── components.css
-│   │   └── grid.css     # Grid-specific styles
+│   │   ├── grid.css
+│   │   ├── upgrade.css
+│   │   └── payment-status.css
 │   └── js/
 │       ├── main.js
 │       ├── grid-editor.js
@@ -157,6 +220,10 @@ The design is inspired by professional tools with a monochrome aesthetic and sub
 - Links to Tracker and DailySnapshot
 - Type-specific value fields
 
+**Subscription**
+- Links User to Stripe customer
+- Tracks Pro status and subscription details
+
 ## API Endpoints
 
 - `GET /` - Redirects to current month
@@ -166,6 +233,10 @@ The design is inspired by professional tools with a monochrome aesthetic and sub
 - `POST /entry/save/` - Save entry (AJAX)
 - `POST /login/` - User authentication
 - `POST /signup/` - User registration
+- `GET /payments/upgrade/` - Upgrade page
+- `POST /payments/create-checkout-session/` - Create Stripe checkout
+- `POST /payments/webhook/` - Stripe webhook endpoint
+- `POST /payments/billing/` - Stripe customer portal
 
 ## Contributing
 
@@ -179,6 +250,7 @@ This is a personal project, but suggestions and bug reports are welcome!
 
 ## Roadmap
 
+- [x] Pro subscriptions with Stripe
 - [ ] Data export (CSV/Excel)
 - [ ] Import from existing Excel sheets
 - [ ] Charts and visualizations
