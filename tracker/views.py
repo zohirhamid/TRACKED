@@ -10,6 +10,7 @@ import json
 from .models import Tracker, DailySnapshot, Entry
 from .forms import TrackerForm
 from django.db import models
+from payments.models import Subscription
 
 class HomePageView(LoginRequiredMixin, TemplateView):
     """Landing page - redirects to current month's tracking view"""
@@ -165,12 +166,12 @@ class TrackerListView(LoginRequiredMixin, ListView):
     def get_suggested_trackers(self):
         return [
             {'name': 'Sleep', 'tracker_type': 'duration', 'icon': '😴', 'unit': 'hours'},
+            {'name': 'Wake Up', 'tracker_type': 'duration', 'icon': '⏰'},
+            {'name': 'Mood', 'tracker_type': 'rating', 'icon': '😊', 'min_value': 1, 'max_value': 5},
             {'name': 'Water', 'tracker_type': 'number', 'icon': '💧', 'unit': 'glasses'},
             {'name': 'Exercise', 'tracker_type': 'binary', 'icon': '🏃'},
-            {'name': 'Mood', 'tracker_type': 'rating', 'icon': '😊', 'min_value': 1, 'max_value': 5},
             {'name': 'Read', 'tracker_type': 'binary', 'icon': '📚'},
             {'name': 'Meditate', 'tracker_type': 'binary', 'icon': '🧘'},
-            {'name': 'Wake Up', 'tracker_type': 'time', 'icon': '⏰'},
             {'name': 'Notes', 'tracker_type': 'text', 'icon': '📝'},
         ]
 
@@ -192,6 +193,14 @@ class QuickAddTrackerView(LoginRequiredMixin, View):
         if slug not in self.SUGGESTED_TRACKERS:
             return JsonResponse({'success': False, 'error': 'Invalid tracker'})
         
+        # Check habit limit
+        if not self.can_create_tracker():
+            return JsonResponse({
+                'success': False, 
+                'error': 'Free plan limited to 3 habits. Upgrade to Pro for unlimited.',
+                'upgrade_required': True
+            })
+        
         tracker_data = self.SUGGESTED_TRACKERS[slug]
         
         # Check if user already has this tracker
@@ -211,6 +220,14 @@ class QuickAddTrackerView(LoginRequiredMixin, View):
         )
         
         return JsonResponse({'success': True})
+    
+    def can_create_tracker(self):
+        FREE_LIMIT = 3
+        tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
+        
+        if tracker_count >= FREE_LIMIT:
+            return Subscription.is_user_pro(self.request.user)
+        return True
 
 class TrackerCreateView(LoginRequiredMixin, CreateView):
     """Form to create a new tracker"""
@@ -218,10 +235,25 @@ class TrackerCreateView(LoginRequiredMixin, CreateView):
     template_name = 'tracker/tracker_form.html'
     form_class = TrackerForm
     success_url = reverse_lazy('tracker:tracker_list')
+
+    def get(self, request, *args, **kwargs):
+        if not self.can_create_tracker():
+            return redirect('payments:upgrade')
+        return super().get(request, *args, **kwargs)
     
     def form_valid(self, form):
+        if not self.can_create_tracker():
+            return redirect('payments:upgrade')
         form.instance.user = self.request.user
         return super().form_valid(form)
+    
+    def can_create_tracker(self):
+        FREE_LIMIT = 3
+        tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
+        
+        if tracker_count >= FREE_LIMIT:
+            return Subscription.is_user_pro(self.request.user)
+        return True
 
 
 class TrackerUpdateView(LoginRequiredMixin, UpdateView):
