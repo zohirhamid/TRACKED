@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Cancelled - TRACKED{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment-status.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <div class="status-icon cancelled">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+    </div>
+    <h1 class="status-title">Payment Cancelled</h1>
+    <p class="status-message">No worries — you weren't charged. You can try again whenever you're ready.</p>
+    <div class="status-actions">
+        <a href="{% url 'payments:upgrade' %}" class="button-primary">Try Again</a>
+        <a href="{% url 'tracker:home' %}" class="button-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

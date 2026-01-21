@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Successful - TRACKED{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment-status.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <div class="status-icon success">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+    </div>
+    <h1 class="status-title">You're now a Pro!</h1>
+    <p class="status-message">Your subscription is active. Time to build some habits.</p>
+    <a href="{% url 'tracker:home' %}" class="button-primary">Go to Dashboard</a>
+</div>
+{% endblock %}

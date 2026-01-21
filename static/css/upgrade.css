@@ -1,0 +1,224 @@
+/* ============================================
+   UPGRADE PAGE
+   ============================================ */
+
+.upgrade-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-2xl);
+}
+
+.upgrade-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+}
+
+.upgrade-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-sm);
+}
+
+.upgrade-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   BILLING TOGGLE
+   ============================================ */
+
+.billing-toggle {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-2xl);
+    background: var(--bg-secondary);
+    padding: var(--space-xs);
+    border-radius: var(--radius-lg);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.toggle-option {
+    padding: var(--space-sm) var(--space-xl);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.toggle-option:hover {
+    color: var(--text-primary);
+}
+
+.toggle-option.active {
+    background: var(--bg-white);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.save-badge {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--success-dark);
+    background: var(--success-bg);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-full);
+}
+
+/* ============================================
+   PLAN CARDS
+   ============================================ */
+
+.plan-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.plan-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.plan-card.featured {
+    border-color: var(--accent-black);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.featured-badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--accent-black);
+    color: var(--bg-white);
+    padding: var(--space-xs) var(--space-lg);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.plan-header {
+    text-align: center;
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: var(--space-xl);
+}
+
+.plan-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+}
+
+.plan-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--space-xs);
+}
+
+.price-amount {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.price-period {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.plan-features li svg {
+    color: var(--success-green);
+    flex-shrink: 0;
+}
+
+.plan-footer {
+    margin-top: var(--space-xl);
+}
+
+.current-plan-badge {
+    display: block;
+    text-align: center;
+    padding: var(--space-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.checkout-form {
+    width: 100%;
+}
+
+.checkout-button {
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-md) var(--space-xl);
+}
+
+.upgrade-note {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 600px) {
+    .upgrade-container {
+        padding: var(--space-lg);
+    }
+    
+    .upgrade-title {
+        font-size: 24px;
+    }
+    
+    .plan-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .plan-card.featured {
+        order: -1;
+    }
+}

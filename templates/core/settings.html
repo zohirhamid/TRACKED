@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - TRACKED{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h1 class="page-title">Settings</h1>
+    
+    <!-- Account Section -->
+    <section class="settings-section">
+        <h2 class="settings-section-title">Account</h2>
+        
+        <div class="settings-card">
+            <div class="settings-row">
+                <div class="settings-label">Email</div>
+                <div class="settings-value">{{ user.email }}</div>
+            </div>
+            
+            <div class="settings-row">
+                <div class="settings-label">Password</div>
+                <div class="settings-value">
+                    <a href="{% url 'account_change_password' %}" class="settings-link">Change password</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Subscription Section -->
+    <section class="settings-section">
+        <h2 class="settings-section-title">Subscription</h2>
+        
+        <div class="settings-card">
+            <div class="settings-row">
+                <div class="settings-label">Current Plan</div>
+                <div class="settings-value">
+                    {% if is_pro %}
+                        <span class="plan-badge pro">Pro</span>
+                    {% else %}
+                        <span class="plan-badge free">Free</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="settings-row">
+                <div class="settings-label">
+                    {% if is_pro %}
+                        Manage your subscription
+                    {% else %}
+                        Unlock unlimited habits
+                    {% endif %}
+                </div>
+                <div class="settings-value">
+                    {% if is_pro %}
+                        <form action="{% url 'payments:billing' %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="settings-link" style="background: none; border: none; cursor: pointer;">Manage billing</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'payments:upgrade' %}" class="button-primary" style="padding: 8px 16px;">Upgrade to Pro</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
