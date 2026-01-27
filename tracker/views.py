@@ -43,7 +43,7 @@ class MonthView(LoginRequiredMixin, TemplateView):
             'today': date.today(),
             **self.get_navigation(year, month),
         })
-        
+
         return context
 
     def get_trackers(self):
