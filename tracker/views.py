@@ -222,12 +222,12 @@ class QuickAddTrackerView(LoginRequiredMixin, View):
         return JsonResponse({'success': True})
     
     def can_create_tracker(self):
-        FREE_LIMIT = 3
-        tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
+        # FREE_LIMIT = 3
+        # tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
         
-        if tracker_count >= FREE_LIMIT:
-            return Subscription.is_user_pro(self.request.user)
-        return True
+        # if tracker_count >= FREE_LIMIT:
+        #     return Subscription.is_user_pro(self.request.user)
+        return True  # Unlimited for now
 
 class TrackerCreateView(LoginRequiredMixin, CreateView):
     """Form to create a new tracker"""
@@ -248,12 +248,12 @@ class TrackerCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def can_create_tracker(self):
-        FREE_LIMIT = 3
-        tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
+        # FREE_LIMIT = 3
+        # tracker_count = Tracker.objects.filter(user=self.request.user, is_active=True).count()
         
-        if tracker_count >= FREE_LIMIT:
-            return Subscription.is_user_pro(self.request.user)
-        return True
+        # if tracker_count >= FREE_LIMIT:
+        #     return Subscription.is_user_pro(self.request.user)
+        return True  # Unlimited for now
 
 
 class TrackerUpdateView(LoginRequiredMixin, UpdateView):
