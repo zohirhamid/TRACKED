@@ -108,8 +108,8 @@
                 <div class="suggested-grid">
                     {% for tracker in suggested_trackers %}
                     <button class="suggested-btn" 
-                            data-slug="{{ tracker.name|lower|slugify }}"
-                            onclick="quickAddTracker('{{ tracker.name|lower|slugify }}', this)">
+                            data-slug="{{ tracker.slug }}"
+                            onclick="quickAddTracker('{{ tracker.slug }}', this)">
                         <span class="suggested-icon">{{ tracker.icon }}</span>
                         <span class="suggested-name">{{ tracker.name }}</span>
                     </button>
