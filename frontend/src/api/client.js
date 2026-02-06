@@ -82,6 +82,23 @@ export async function login(username, password) {
   setTokens(data.access, data.refresh);
   return data;
 }
+
+export async function register(username, password, email) {
+  const res = await fetch(`${API_BASE}/core/signup/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, email }),
+  });
+ 
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || 'Registration failed');
+  }
+ 
+  const data = await res.json();
+  setTokens(data.access, data.refresh);
+  return data;
+}
  
 // Tracker API
 export async function fetchMonthData(year, month) {

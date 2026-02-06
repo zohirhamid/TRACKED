@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { login } from '../api/client';
+import { register } from '../api/client';
 import { useAuth } from '../context/AuthContext';
  
-export default function LoginPage({ onSwitchToSignUp }) {
+export default function SignUpPage({ onSwitchToLogin }) {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function LoginPage({ onSwitchToSignUp }) {
     setError('');
     setLoading(true);
     try {
-      await login(username, password);
+      await register(username, password, email);
       onLogin();
     } catch (err) {
       setError(err.message);
@@ -68,7 +69,7 @@ export default function LoginPage({ onSwitchToSignUp }) {
             letterSpacing: '-0.5px',
             color: '#fff',
           }}>
-            Sign in
+            Sign up
           </h1>
         </div>
  
@@ -90,6 +91,21 @@ export default function LoginPage({ onSwitchToSignUp }) {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
+          style={{
+            background: 'transparent',
+            border: '1px solid #1a1a1a',
+            color: '#e5e5e5',
+            padding: '12px 14px',
+            fontSize: '13px',
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        />
+        <input
+          type="email"
+          placeholder="email (optional)"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           style={{
             background: 'transparent',
             border: '1px solid #1a1a1a',
@@ -132,27 +148,26 @@ export default function LoginPage({ onSwitchToSignUp }) {
             opacity: loading ? 0.5 : 1,
           }}
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? 'Creating account...' : 'Sign up'}
         </button>
-
+ 
         <div style={{
           textAlign: 'center',
           fontSize: '12px',
           color: '#555',
           marginTop: '8px',
         }}>
-          Don't have an account?{' '}
+          Already have an account?{' '}
           <span
-            onClick={onSwitchToSignUp}
+            onClick={onSwitchToLogin}
             style={{
               color: '#eab308',
               cursor: 'pointer',
             }}
           >
-            Sign up
+            Sign in
           </span>
         </div>
-        
       </form>
     </div>
   );
