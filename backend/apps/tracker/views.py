@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
 from datetime import datetime, date
 import calendar
 from .models import Tracker, DailySnapshot, Entry
@@ -159,16 +158,6 @@ class TrackerDeleteView(APIView):
 
 
 class EntryCreateUpdateView(APIView):
-    """
-    Handles saving entry data when user edits a cell in the grid.
-    
-    Expected POST data:
-    {
-        "tracker_id": 5,
-        "date": "2025-07-15",
-        "value": 4.5 (or true/false, or "23:00", etc.)
-    }
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

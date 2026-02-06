@@ -1,3 +1,4 @@
+# tracker/urls.py
 from django.urls import path
 from .views import (
     MonthView,
@@ -13,19 +14,17 @@ from .views import (
 app_name = 'tracker'
 
 urlpatterns = [
+    # Month view
+    path('month/<int:year>/<int:month>/', MonthView.as_view(), name='month_view'),
     
-    path('api/month/<int:year>/<int:month>/', MonthView.as_view(), name='month_view'),
+    # Tracker CRUD
+    path('trackers/', TrackerListView.as_view(), name='tracker_list'),  # GET (list)
+    path('trackers/create/', TrackerCreateView.as_view(), name='tracker_create'),  # POST (create)
+    path('trackers/quick-add/<slug:slug>/', QuickAddTrackerView.as_view(), name='quick_add_tracker'),  # POST
+    path('trackers/<int:pk>/', TrackerUpdateView.as_view(), name='tracker_update'),  # PUT/PATCH
+    path('trackers/<int:pk>/delete/', TrackerDeleteView.as_view(), name='tracker_delete'),  # DELETE
     
-    
-    path('api/trackers/', TrackerListView.as_view(), name='tracker_list'),  # GET
-    path('api/trackers/', TrackerCreateView.as_view(), name='tracker_create'),  # POST
-    path('api/trackers/<int:pk>/', TrackerUpdateView.as_view(), name='tracker_detail'),  # PUT/PATCH
-    path('api/trackers/<int:pk>/', TrackerDeleteView.as_view(), name='tracker_delete'),  # DELETE
-    
-    
-    path('api/entries/', EntryCreateUpdateView.as_view(), name='entry_save'),  # POST
-    path('api/entries/<int:pk>/', EntryDeleteView.as_view(), name='entry_delete'),  # DELETE
-    
-   
-    path('api/trackers/quick-add/<slug:slug>/', QuickAddTrackerView.as_view(), name='quick_add_tracker'),  # POST
+    # Entry CRUD
+    path('entries/', EntryCreateUpdateView.as_view(), name='entry_save'),  # POST
+    path('entries/<int:pk>/', EntryDeleteView.as_view(), name='entry_delete'),  # DELETE
 ]
