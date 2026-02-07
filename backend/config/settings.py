@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "0.0.0.0",
     ".railway.app",
+    "tracked-app-production.up.railway.app",
     "tracked-production.up.railway.app",
     "tracked.zohirhamid.com",
 ]
@@ -46,6 +47,8 @@ TEMPLATES = [
 # ─────────────────────────────────────────────
 CSRF_TRUSTED_ORIGINS = [
     "https://merry-caring-production-8d3a.up.railway.app",
+    "https://tracked-app-production.up.railway.app",
+    "https://tracked-production.up.railway.app",
     "https://tracked.zohirhamid.com",
 ]
 
@@ -58,6 +61,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://merry-caring-production-8d3a.up.railway.app",
+    "https://tracked-app-production.up.railway.app",
     "https://tracked-production.up.railway.app",
     "https://tracked.zohirhamid.com",
 ]
