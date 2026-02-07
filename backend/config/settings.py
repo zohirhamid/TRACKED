@@ -45,7 +45,7 @@ TEMPLATES = [
 # CSRF & CORS (REACT)
 # ─────────────────────────────────────────────
 CSRF_TRUSTED_ORIGINS = [
-    "https://tracked-production.up.railway.app",
+    "https://merry-caring-production-8d3a.up.railway.app",
     "https://tracked.zohirhamid.com",
 ]
 
