@@ -31,6 +31,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signup = async (username, password, email) => {
+    try {
+      await authAPI.signup(username, password, email);
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Signup failed',
+      };
+    }
+  };
+
   const logout = () => {
     authAPI.logout();
     setIsAuthenticated(false);
@@ -42,6 +55,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         isLoading,
         login,
+        signup,
         logout,
       }}
     >

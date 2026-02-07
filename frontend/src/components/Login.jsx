@@ -4,21 +4,30 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { login, signup } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    const result = await login(username, password);
+    const result = isSignUp
+      ? await signup(username, password, email)
+      : await login(username, password);
 
     if (!result.success) {
       setError(result.error);
       setIsLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setError('');
   };
 
   const theme = {
@@ -82,7 +91,7 @@ const Login = () => {
             margin: 0,
             letterSpacing: '-0.5px',
           }}>
-            Sign In
+            {isSignUp ? 'Sign Up' : 'Sign In'}
           </h1>
         </div>
 
@@ -115,6 +124,36 @@ const Login = () => {
               }}
             />
           </div>
+
+          {isSignUp && (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                color: theme.textMuted,
+                textTransform: 'uppercase',
+                marginBottom: '8px',
+              }}>
+                Email <span style={{ color: theme.textMuted, fontSize: '9px', textTransform: 'none' }}>(optional)</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: theme.bgCard,
+                  border: `1px solid ${theme.border}`,
+                  color: theme.text,
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          )}
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{
@@ -176,9 +215,29 @@ const Login = () => {
               opacity: isLoading ? 0.6 : 1,
             }}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading
+              ? (isSignUp ? 'Creating account...' : 'Signing in...')
+              : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
+
+        <div style={{
+          textAlign: 'center',
+          marginTop: '24px',
+          fontSize: '12px',
+          color: theme.textMuted,
+        }}>
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <span
+            onClick={toggleMode}
+            style={{
+              color: theme.accent,
+              cursor: 'pointer',
+            }}
+          >
+            {isSignUp ? 'Sign In' : 'Sign Up'}
+          </span>
+        </div>
       </div>
     </div>
   );
