@@ -12,9 +12,10 @@ class TrackerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tracker
         fields = [
-            'id', 'user', 'name', 'tracker_type', 'unit', 
+            'id', 'user', 'name', 'tracker_type', 'unit',
             'display_order', 'is_active', 'min_value', 'max_value', 'created_at'
         ]
+        read_only_fields = ['id', 'user', 'created_at']
 
 
 class EntrySerializer(serializers.ModelSerializer):
