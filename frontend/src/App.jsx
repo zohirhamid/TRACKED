@@ -1,26 +1,36 @@
-import { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
+import React from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './components/Login';
 import LifeTracker from './components/LifeTracker';
- 
+
 function AppContent() {
-  const { authed } = useAuth();
-  const [page, setPage] = useState('login');
- 
-  if (authed) return <LifeTracker />;
- 
-  if (page === 'signup') {
-    return <SignUpPage onSwitchToLogin={() => setPage('login')} />;
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#0a0a0a',
+        color: '#888',
+        fontFamily: '"JetBrains Mono", monospace',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        Loading...
+      </div>
+    );
   }
- 
-  return <LoginPage onSwitchToSignUp={() => setPage('signup')} />;
+
+  return isAuthenticated ? <LifeTracker /> : <Login />;
 }
- 
-export default function App() {
+
+function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
 }
+
+export default App;

@@ -106,7 +106,8 @@ class GenerateInsightView(APIView):
         return today, today
     
     def get_tracking_data(self, user, period_start, period_end):
-        from tracker.models import Tracker, DailySnapshot, Entry
+        # FIXED: Changed import path from 'tracker.models' to 'apps.tracker.models'
+        from apps.tracker.models import Tracker, DailySnapshot, Entry
         
         trackers = Tracker.objects.filter(user=user, is_active=True)
         

@@ -56,6 +56,12 @@ SESSION_COOKIE_SECURE = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://tracked-production.up.railway.app",
+    "https://tracked.zohirhamid.com",
+]
+
 # ─────────────────────────────────────────────
 # API KEYS
 # ─────────────────────────────────────────────

@@ -1,329 +1,296 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import {
-  fetchMonthData,
-  createTracker,
-  updateTracker,
-  deleteTracker,
-  saveEntry,
-  deleteEntry,
-  fetchLatestInsight,
-  generateInsight,
-} from '../api/client';
- 
+import React, { useState, useEffect } from 'react';
+import { trackerAPI, entryAPI, insightsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import AddTrackerModal from './AddTrackerModal';
+import TrackerCell from './TrackerCell';
+import TrackerManager from './TrackerManager';
+
 const LifeTracker = () => {
-  const { onLogout } = useAuth();
+  const { logout } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCell, setSelectedCell] = useState(null);
   const [isDark, setIsDark] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
   const [loadingInsights, setLoadingInsights] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
- 
+  
   // Data from backend
   const [trackers, setTrackers] = useState([]);
-  const [weeks, setWeeks] = useState([]);
-  const [weekStats, setWeekStats] = useState([]);
-  const [monthInfo, setMonthInfo] = useState({ month_name: '', total_days: 0, today: '' });
- 
-  const [editingCategory, setEditingCategory] = useState(null);
-  const debounceTimers = useRef({});
- 
-  const [insights, setInsights] = useState({
-    summary: '',
-    trends: [],
-    advice: [],
-    correlations: [],
-  });
- 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1;
- 
-  // Flatten weeks into a list of days for the grid
-  const days = weeks.flat();
- 
-  const loadMonthData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchMonthData(year, month);
-      setTrackers(data.trackers || []);
-      setWeeks(data.weeks || []);
-      setWeekStats(data.week_stats || []);
-      setMonthInfo({
-        month_name: data.month_name || '',
-        total_days: data.total_days || 0,
-        today: data.today || '',
-      });
-    } catch (err) {
-      if (err.message === 'Session expired') {
-        onLogout();
-        return;
-      }
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [year, month, onLogout]);
- 
+  const [monthData, setMonthData] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [suggestedTrackers, setSuggestedTrackers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showManagerModal, setShowManagerModal] = useState(false);
+
+  // Load month data
   useEffect(() => {
     loadMonthData();
-  }, [loadMonthData]);
- 
-  const loadInsights = useCallback(async () => {
-    try {
-      const data = await fetchLatestInsight('weekly');
-      if (data.content) {
-        setInsights({
-          summary: data.content.summary || '',
-          trends: data.content.trends || [],
-          advice: data.content.advice || [],
-          correlations: data.content.correlations || [],
-        });
-      }
-    } catch {
-      // Insights are optional — fail silently
-    }
-  }, []);
- 
+  }, [currentDate]);
+
+  // Load insights when panel is shown
   useEffect(() => {
-    loadInsights();
-  }, [loadInsights]);
- 
-  const getDayNumber = (dateStr) => new Date(dateStr).getDate();
- 
-  const getDayName = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
-  };
- 
-  const isToday = (dateStr) => dateStr === monthInfo.today;
- 
-  const isWeekend = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.getDay() === 0 || d.getDay() === 6;
-  };
- 
-  const navigateMonth = (direction) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
-  };
- 
-  const getCellKey = (trackerId, dateStr) => `${trackerId}-${dateStr}`;
- 
-  // Extract display value from an entry based on tracker type
-  const getEntryDisplayValue = (tracker, entry) => {
-    if (!entry) return '';
-    switch (tracker.tracker_type) {
-      case 'binary': return entry.binary_value === true ? 'Yes' : entry.binary_value === false ? 'No' : '';
-      case 'number': return entry.number_value != null ? String(entry.number_value) : '';
-      case 'rating': return entry.rating_value != null ? String(entry.rating_value) : '';
-      case 'time': return entry.time_value || '';
-      case 'duration': return entry.duration_minutes != null ? String(entry.duration_minutes) : '';
-      case 'text': return entry.text_value || '';
-      default: return '';
+    if (showInsights) {
+      loadInsights();
     }
-  };
- 
-  // Build the value payload for saveEntry based on tracker type
-  const buildEntryPayload = (tracker, rawValue) => {
-    const val = rawValue.trim();
-    switch (tracker.tracker_type) {
-      case 'binary': {
-        const lower = val.toLowerCase();
-        if (['yes', 'y', '1', 'true'].includes(lower)) return { binary_value: true };
-        if (['no', 'n', '0', 'false'].includes(lower)) return { binary_value: false };
-        return null;
-      }
-      case 'number': return { number_value: val };
-      case 'rating': return { rating_value: val };
-      case 'time': return { time_value: val };
-      case 'duration': return { duration_minutes: val };
-      case 'text': return { text_value: val };
-      default: return null;
-    }
-  };
- 
-  const handleCellChange = (tracker, dateStr, value) => {
-    // Optimistically update local state
-    setWeeks(prevWeeks =>
-      prevWeeks.map(week =>
-        week.map(day => {
-          if (day.date !== dateStr) return day;
-          const updatedEntries = { ...day.entries };
-          if (!value.trim()) {
-            delete updatedEntries[tracker.id];
-          } else {
-            updatedEntries[tracker.id] = {
-              ...updatedEntries[tracker.id],
-              _displayOverride: value,
-            };
-          }
-          return { ...day, entries: updatedEntries };
-        })
-      )
-    );
- 
-    // Debounce the API call
-    const key = getCellKey(tracker.id, dateStr);
-    clearTimeout(debounceTimers.current[key]);
-    debounceTimers.current[key] = setTimeout(async () => {
-      try {
-        if (!value.trim()) {
-          await deleteEntry(tracker.id, dateStr);
-        } else {
-          const payload = buildEntryPayload(tracker, value);
-          if (payload) {
-            await saveEntry(tracker.id, dateStr, payload);
-          }
-        }
-      } catch {
-        // Reload on error to sync state
-        loadMonthData();
-      }
-    }, 500);
-  };
- 
-  const handleAddTracker = async () => {
+  }, [showInsights, currentDate]);
+
+  const loadMonthData = async () => {
+    setIsLoading(true);
     try {
-      const maxOrder = trackers.reduce((max, t) => Math.max(max, t.display_order || 0), 0);
-      const data = await createTracker({
-        name: 'New',
-        tracker_type: 'number',
-        unit: '',
-        display_order: maxOrder + 1,
-        is_active: true,
-      });
-      setTrackers([...trackers, data]);
-      setEditingCategory(data.id);
-    } catch {
-      setError('Failed to create tracker');
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const data = await trackerAPI.getMonthView(year, month);
+      
+      console.log('Month data from backend:', data);
+      console.log('Weeks structure:', data.weeks);
+      
+      setMonthData(data);
+      setTrackers(data.trackers || []);
+      
+      // Load tracker list to get suggested trackers
+      const trackerList = await trackerAPI.listTrackers();
+      setSuggestedTrackers(trackerList.suggested_trackers || []);
+    } catch (error) {
+      console.error('Failed to load month data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
- 
-  const handleUpdateTracker = async (id, updates) => {
-    const tracker = trackers.find(t => t.id === id);
-    if (!tracker) return;
- 
-    // Optimistic update
-    setTrackers(trackers.map(t => t.id === id ? { ...t, ...updates } : t));
- 
-    try {
-      await updateTracker(id, { ...tracker, ...updates });
-    } catch {
-      loadMonthData();
-    }
-  };
- 
-  const handleDeleteTracker = async (id) => {
-    if (trackers.length <= 1) return;
-    setTrackers(trackers.filter(t => t.id !== id));
-    try {
-      await deleteTracker(id);
-    } catch {
-      loadMonthData();
-    }
-  };
- 
-  const handleGenerateInsights = async () => {
+
+  const loadInsights = async () => {
     setLoadingInsights(true);
     try {
-      const data = await generateInsight('weekly');
-      if (data.content) {
-        setInsights({
-          summary: data.content.summary || '',
-          trends: data.content.trends || [],
-          advice: data.content.advice || [],
-          correlations: data.content.correlations || [],
-        });
+      const latest = await insightsAPI.getLatest('monthly');
+      if (latest.content) {
+        // Parse the AI-generated content (assuming it's formatted JSON or text)
+        setInsights(latest);
       }
-    } catch {
-      // fail silently
+    } catch (error) {
+      console.error('Failed to load insights:', error);
     } finally {
       setLoadingInsights(false);
     }
   };
- 
-  const getStats = (tracker) => {
-    const values = [];
-    for (const day of days) {
-      const entry = day.entries?.[tracker.id];
-      if (!entry) continue;
-      let v = null;
-      if (tracker.tracker_type === 'number' && entry.number_value != null) v = Number(entry.number_value);
-      else if (tracker.tracker_type === 'rating' && entry.rating_value != null) v = Number(entry.rating_value);
-      else if (tracker.tracker_type === 'duration' && entry.duration_minutes != null) v = Number(entry.duration_minutes);
-      if (v != null && !isNaN(v)) values.push(v);
+
+  const generateInsights = async () => {
+    setLoadingInsights(true);
+    try {
+      const newInsight = await insightsAPI.generate('monthly');
+      setInsights(newInsight);
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+    } finally {
+      setLoadingInsights(false);
     }
-    if (values.length === 0) return { avg: '\u2014', count: 0 };
-    const total = values.reduce((a, b) => a + b, 0);
-    return { avg: (total / values.length).toFixed(1), count: values.length };
   };
- 
-  // Theme colors
+
+  const handleAddTracker = async ({ type, slug, data }) => {
+    try {
+      if (type === 'quick') {
+        await trackerAPI.quickAddTracker(slug);
+      } else {
+        await trackerAPI.createTracker(data);
+      }
+      await loadMonthData();
+    } catch (error) {
+      console.error('Failed to add tracker:', error);
+      alert('Failed to add tracker: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const handleDeleteTracker = async (trackerId) => {
+    if (!confirm('Are you sure you want to delete this tracker?')) return;
+    
+    try {
+      await trackerAPI.deleteTracker(trackerId);
+      await loadMonthData();
+    } catch (error) {
+      console.error('Failed to delete tracker:', error);
+    }
+  };
+
+  const updateCellValue = async (trackerId, day, value) => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    try {
+      // Determine value field based on tracker type
+      const tracker = trackers.find(t => t.id === trackerId);
+      if (!tracker) return;
+
+      const entryData = {
+        tracker_id: trackerId,
+        date: dateStr,
+      };
+
+      // Handle empty value as delete
+      if (!value || value === '') {
+        entryData.delete_entry = true;
+      } else {
+        // Map value to correct field based on tracker type
+        switch (tracker.tracker_type) {
+          case 'binary':
+            entryData.binary_value = value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'yes';
+            break;
+          case 'number':
+            entryData.number_value = parseFloat(value);
+            break;
+          case 'rating':
+            entryData.rating_value = parseInt(value);
+            break;
+          case 'duration':
+            entryData.duration_minutes = parseInt(value);
+            break;
+          case 'time':
+            entryData.time_value = value;
+            break;
+          case 'text':
+            entryData.text_value = value;
+            break;
+        }
+      }
+
+      await entryAPI.saveEntry(entryData);
+      
+      // Reload the month data to get fresh data from backend
+      await loadMonthData();
+    } catch (error) {
+      console.error('Failed to update entry:', error);
+    }
+  };
+
+  const getCellValue = (trackerId, day) => {
+    if (!monthData || !monthData.weeks) return '';
+    
+    // Find the tracker to know its type
+    const tracker = trackers.find(t => t.id === trackerId);
+    if (!tracker) return '';
+    
+    for (const week of monthData.weeks) {
+      // week is an array of day objects
+      const dayData = week.find(d => d.day === day);
+      if (dayData && dayData.entries && dayData.entries[trackerId]) {
+        const entry = dayData.entries[trackerId];
+        
+        // Extract value based on tracker type
+        switch (tracker.tracker_type) {
+          case 'binary':
+            return entry.binary_value !== undefined ? entry.binary_value.toString() : '';
+          case 'number':
+            return entry.number_value !== null && entry.number_value !== undefined ? entry.number_value.toString() : '';
+          case 'rating':
+            return entry.rating_value !== null && entry.rating_value !== undefined ? entry.rating_value.toString() : '';
+          case 'duration':
+            return entry.duration_minutes !== null && entry.duration_minutes !== undefined ? entry.duration_minutes.toString() : '';
+          case 'time':
+            return entry.time_value || '';
+          case 'text':
+            return entry.text_value || '';
+          default:
+            return '';
+        }
+      }
+    }
+    return '';
+  };
+
+  const navigateMonth = (direction) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
+  };
+
+  const getMonthName = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getDayName = (day) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
+  const isToday = (day) => {
+    const today = new Date();
+    return (
+      day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isWeekend = (day) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6;
+  };
+
+  const getCellKey = (trackerId, day) => `${trackerId}-${day}`;
+
+  const daysInMonth = getDaysInMonth(currentDate);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // Theme colors - softer and easier on the eyes
   const theme = isDark ? {
-    bg: '#0a0a0a',
-    bgAlt: '#12110a',
-    bgCard: '#111',
-    text: '#e5e5e5',
-    textMuted: '#888',
-    textDim: '#555',
-    textDimmer: '#333',
-    textDimmest: '#222',
-    border: '#1a1a1a',
-    borderLight: '#141414',
+    bg: '#1a1a1a',              // Softer black (was #0a0a0a - too dark)
+    bgAlt: '#222222',           // Softer alt bg
+    bgCard: '#252525',          // Softer card (was #111)
+    text: '#e0e0e0',            // Slightly dimmer white
+    textMuted: '#999',          // Lighter muted (was #888)
+    textDim: '#666',            // Lighter dim (was #555)
+    textDimmer: '#444',         // Lighter dimmer (was #333)
+    textDimmest: '#333',        // Lighter dimmest (was #222)
+    border: '#2a2a2a',          // Softer border
+    borderLight: '#242424',     // Softer light border
     accent: '#eab308',
     accentBg: 'rgba(234, 179, 8, 0.06)',
     accentBgStrong: 'rgba(234, 179, 8, 0.1)',
-    weekendText: '#333',
-    weekendDayName: '#262626',
-    hoverBorder: '#444',
+    weekendText: '#444',        // Lighter
+    weekendDayName: '#383838',  // Lighter
+    hoverBorder: '#555',
     hoverText: '#fff',
-    inputPlaceholder: '#222',
-    positive: '#22c55e',
-    negative: '#ef4444',
-    neutral: '#888',
+    inputPlaceholder: '#333',
   } : {
-    bg: '#ffffff',
-    bgAlt: '#fffef5',
-    bgCard: '#fafafa',
-    text: '#1a1a1a',
-    textMuted: '#555',
+    bg: '#fafafa',              // Softer white (was #ffffff - too bright)
+    bgAlt: '#f5f5f0',           // Warmer alt
+    bgCard: '#f0f0f0',          // Softer card
+    text: '#2a2a2a',            // Softer black (was #1a1a1a)
+    textMuted: '#666',          // Darker muted
     textDim: '#888',
     textDimmer: '#aaa',
     textDimmest: '#ccc',
-    border: '#e5e5e5',
-    borderLight: '#f0f0f0',
-    accent: '#b8960a',
-    accentBg: 'rgba(184, 150, 10, 0.08)',
-    accentBgStrong: 'rgba(184, 150, 10, 0.15)',
-    weekendText: '#bbb',
-    weekendDayName: '#ccc',
+    border: '#d0d0d0',          // Softer border
+    borderLight: '#e0e0e0',     // Softer
+    accent: '#ca8a04',          // Slightly darker accent
+    accentBg: 'rgba(202, 138, 4, 0.08)',
+    accentBgStrong: 'rgba(202, 138, 4, 0.15)',
+    weekendText: '#aaa',
+    weekendDayName: '#bbb',
     hoverBorder: '#999',
     hoverText: '#000',
-    inputPlaceholder: '#ddd',
-    positive: '#16a34a',
-    negative: '#dc2626',
-    neutral: '#666',
+    inputPlaceholder: '#d5d5d5',
   };
- 
-  if (loading && trackers.length === 0) {
+
+  if (isLoading && !monthData) {
     return (
       <div style={{
         minHeight: '100vh',
         backgroundColor: theme.bg,
+        color: theme.text,
+        fontFamily: '"JetBrains Mono", "SF Mono", "Fira Code", monospace',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: '"JetBrains Mono", monospace',
-        color: theme.textDim,
-        fontSize: '12px',
-        letterSpacing: '2px',
       }}>
-        LOADING...
+        <div style={{ fontSize: '14px', color: theme.textMuted }}>Loading...</div>
       </div>
     );
   }
- 
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -336,24 +303,63 @@ const LifeTracker = () => {
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
- 
-        * { box-sizing: border-box; }
- 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: ${isDark ? '#141414' : '#f5f5f5'}; }
-        ::-webkit-scrollbar-thumb { background: ${isDark ? '#333' : '#ccc'}; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: ${isDark ? '#444' : '#aaa'}; }
- 
-        input:focus { outline: none; }
-        .cell-input::placeholder { color: ${theme.inputPlaceholder}; }
- 
+        
+        * {
+          box-sizing: border-box;
+        }
+        
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: ${isDark ? '#141414' : '#f5f5f5'};
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: ${isDark ? '#333' : '#ccc'};
+          border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${isDark ? '#444' : '#aaa'};
+        }
+        
+        input:focus {
+          outline: none;
+        }
+        
+        .cell-input::placeholder {
+          color: ${theme.inputPlaceholder};
+        }
+        
         @keyframes pulse {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 1; }
         }
-        .loading-dot { animation: pulse 1.5s ease-in-out infinite; }
+        
+        .loading-dot {
+          animation: pulse 1.5s ease-in-out infinite;
+        }
       `}</style>
- 
+
+      <AddTrackerModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddTracker}
+        suggestedTrackers={suggestedTrackers}
+        theme={theme}
+      />
+
+      <TrackerManager
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        trackers={trackers}
+        onUpdate={loadMonthData}
+        theme={theme}
+      />
+
       <div style={{ display: 'flex', gap: '32px' }}>
         {/* Main Tracker */}
         <div style={{ flex: 1 }}>
@@ -395,15 +401,31 @@ const LifeTracker = () => {
                 letterSpacing: '-0.5px',
                 color: isDark ? '#fff' : '#000',
               }}>
-                {monthInfo.month_name} {year}
+                {getMonthName(currentDate)}
               </h1>
             </div>
- 
+            
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
             }}>
+              <button
+                onClick={() => setShowManagerModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${theme.borderLight}`,
+                  color: theme.textDim,
+                  padding: '8px 14px',
+                  cursor: 'pointer',
+                  fontSize: '9px',
+                  letterSpacing: '1px',
+                  marginRight: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                MANAGE
+              </button>
               <button
                 onClick={() => setShowInsights(!showInsights)}
                 style={{
@@ -415,11 +437,26 @@ const LifeTracker = () => {
                   fontSize: '9px',
                   letterSpacing: '1px',
                   marginRight: '8px',
-                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
                 INSIGHTS
+              </button>
+              <button
+                onClick={logout}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${theme.borderLight}`,
+                  color: theme.textDim,
+                  padding: '8px 14px',
+                  cursor: 'pointer',
+                  fontSize: '9px',
+                  letterSpacing: '1px',
+                  marginRight: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                LOGOUT
               </button>
               <button
                 onClick={() => setIsDark(!isDark)}
@@ -434,7 +471,7 @@ const LifeTracker = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                {isDark ? '\u2600' : '\u263E'}
+                {isDark ? '☀' : '☾'}
               </button>
               <button
                 onClick={() => navigateMonth(-1)}
@@ -448,7 +485,7 @@ const LifeTracker = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                \u2190
+                ←
               </button>
               <button
                 onClick={() => setCurrentDate(new Date())}
@@ -460,7 +497,6 @@ const LifeTracker = () => {
                   cursor: 'pointer',
                   fontSize: '9px',
                   letterSpacing: '1px',
-                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -478,50 +514,26 @@ const LifeTracker = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                \u2192
-              </button>
-              <button
-                onClick={onLogout}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  fontFamily: 'inherit',
-                  marginLeft: '8px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                LOGOUT
+                →
               </button>
             </div>
           </header>
- 
-          {error && (
-            <div style={{
-              color: theme.negative,
-              fontSize: '12px',
-              padding: '10px 12px',
-              border: `1px solid rgba(239, 68, 68, 0.2)`,
-              background: 'rgba(239, 68, 68, 0.05)',
-              marginBottom: '20px',
-            }}>
-              {error}
-            </div>
-          )}
- 
+
           {/* Main Grid */}
-          <div style={{ overflowX: 'auto', paddingBottom: '16px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{
+            overflowX: 'auto',
+            paddingBottom: '16px',
+          }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}>
               <thead>
                 <tr>
                   <th style={{
-                    width: '100px',
-                    minWidth: '100px',
-                    padding: '12px 16px',
+                    width: '10px',
+                    minWidth: '8px',
+                    padding: '12px 8px',
                     textAlign: 'left',
                     fontSize: '10px',
                     fontWeight: '500',
@@ -536,108 +548,62 @@ const LifeTracker = () => {
                   }}>
                     Date
                   </th>
-                  {trackers.map(tracker => (
-                    <th
-                      key={tracker.id}
-                      style={{
-                        minWidth: '80px',
-                        padding: '12px 12px',
-                        textAlign: 'center',
-                        borderBottom: `1px solid ${theme.border}`,
-                        borderLeft: `1px solid ${theme.borderLight}`,
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => setEditingCategory(editingCategory === tracker.id ? null : tracker.id)}
-                    >
-                      {editingCategory === tracker.id ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                          <input
-                            type="text"
-                            value={tracker.name}
-                            onChange={(e) => handleUpdateTracker(tracker.id, { name: e.target.value })}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              borderBottom: `1px solid ${theme.textDimmer}`,
-                              color: isDark ? '#fff' : '#000',
-                              fontSize: '11px',
-                              fontFamily: 'inherit',
-                              padding: '2px 4px',
-                              width: '70px',
-                              textAlign: 'center',
-                            }}
-                            autoFocus
-                          />
-                          <input
-                            type="text"
-                            value={tracker.unit || ''}
-                            onChange={(e) => handleUpdateTracker(tracker.id, { unit: e.target.value })}
-                            onClick={(e) => e.stopPropagation()}
-                            placeholder="unit"
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              borderBottom: `1px solid ${theme.textDimmest}`,
-                              color: theme.textDim,
-                              fontSize: '9px',
-                              fontFamily: 'inherit',
-                              padding: '2px 4px',
-                              width: '50px',
-                              textAlign: 'center',
-                            }}
-                          />
-                          {trackers.length > 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTracker(tracker.id);
-                              }}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: theme.textDim,
-                                cursor: 'pointer',
-                                padding: '2px',
-                                fontSize: '12px',
-                              }}
-                            >
-                              \u00d7
-                            </button>
-                          )}
+                  {trackers.map(tracker => {
+                    // Set compact width based on tracker type
+                    let cellWidth = '65px'; // Compact default
+                    if (tracker.tracker_type === 'text') {
+                      cellWidth = '140px'; // Double width for text
+                    } else if (tracker.tracker_type === 'rating') {
+                      cellWidth = '85px'; // For 5 stars
+                    } else if (tracker.tracker_type === 'duration') {
+                      cellWidth = '75px'; // For "2h 30m"
+                    } else if (tracker.tracker_type === 'time') {
+                      cellWidth = '70px'; // For "14:30"
+                    }
+                    
+                    return (
+                      <th
+                        key={tracker.id}
+                        style={{
+                          width: cellWidth,
+                          minWidth: cellWidth,
+                          padding: '12px 8px',
+                          textAlign: 'center',
+                          borderBottom: `1px solid ${theme.border}`,
+                          borderLeft: `1px solid ${theme.borderLight}`,
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '11px',
+                          color: theme.text,
+                          fontWeight: '400',
+                        }}>
+                          {tracker.name}
                         </div>
-                      ) : (
-                        <>
+                        {tracker.unit && (
                           <div style={{
-                            fontSize: '11px',
-                            color: theme.text,
-                            fontWeight: '400',
+                            fontSize: '9px',
+                            color: theme.textDim,
+                            marginTop: '2px',
                           }}>
-                            {tracker.name}
+                            {tracker.unit}
                           </div>
-                          {tracker.unit && (
-                            <div style={{
-                              fontSize: '9px',
-                              color: theme.textDim,
-                              marginTop: '2px',
-                            }}>
-                              {tracker.unit}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </th>
-                  ))}
-                  <th style={{
-                    width: '50px',
-                    minWidth: '50px',
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    borderBottom: `1px solid ${theme.border}`,
-                    borderLeft: `1px solid ${theme.border}`,
-                  }}>
+                        )}
+                      </th>
+                    );
+                  })}
+                  <th
+                    style={{
+                      width: '45px',
+                      minWidth: '45px',
+                      padding: '12px 4px',
+                      textAlign: 'center',
+                      borderBottom: `1px solid ${theme.border}`,
+                      borderLeft: `1px solid ${theme.border}`,
+                    }}
+                  >
                     <button
-                      onClick={handleAddTracker}
+                      onClick={() => setShowAddModal(true)}
                       style={{
                         background: 'transparent',
                         border: `1px dashed ${theme.textDimmest}`,
@@ -654,151 +620,85 @@ const LifeTracker = () => {
                 </tr>
               </thead>
               <tbody>
-                {days.map(day => {
-                  const dayNum = getDayNumber(day.date);
-                  const dayName = getDayName(day.date);
-                  const todayFlag = isToday(day.date);
-                  const weekendFlag = isWeekend(day.date);
- 
-                  return (
-                    <tr
-                      key={day.date}
-                      style={{
-                        backgroundColor: todayFlag ? theme.accentBg : 'transparent',
-                      }}
-                    >
-                      <td style={{
-                        padding: '0 16px',
-                        height: '38px',
-                        borderBottom: `1px solid ${theme.borderLight}`,
-                        position: 'sticky',
-                        left: 0,
-                        backgroundColor: todayFlag ? theme.bgAlt : theme.bg,
-                        zIndex: 5,
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                        }}>
-                          <span style={{
-                            fontSize: '12px',
-                            color: todayFlag ? theme.accent : (weekendFlag ? theme.weekendText : theme.textMuted),
-                            fontWeight: todayFlag ? '600' : '400',
-                            width: '18px',
-                          }}>
-                            {dayNum}
-                          </span>
-                          <span style={{
-                            fontSize: '9px',
-                            color: weekendFlag ? theme.weekendDayName : theme.textDimmer,
-                            width: '26px',
-                          }}>
-                            {dayName}
-                          </span>
-                        </div>
-                      </td>
-                      {trackers.map(tracker => {
-                        const entry = day.entries?.[tracker.id];
-                        const displayValue = entry?._displayOverride != null
-                          ? entry._displayOverride
-                          : getEntryDisplayValue(tracker, entry);
-                        const cellKey = getCellKey(tracker.id, day.date);
-                        const isSelected = selectedCell === cellKey;
- 
-                        return (
-                          <td
-                            key={tracker.id}
-                            style={{
-                              padding: '0',
-                              borderBottom: `1px solid ${theme.borderLight}`,
-                              borderLeft: `1px solid ${theme.borderLight}`,
-                            }}
-                          >
-                            <input
-                              type="text"
-                              className="cell-input"
-                              value={displayValue}
-                              onChange={(e) => handleCellChange(tracker, day.date, e.target.value)}
-                              onFocus={() => setSelectedCell(cellKey)}
-                              onBlur={() => setSelectedCell(null)}
-                              style={{
-                                width: '100%',
-                                height: '38px',
-                                background: isSelected ? theme.accentBgStrong : 'transparent',
-                                border: 'none',
-                                borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
-                                borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
-                                color: displayValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
-                                textAlign: 'center',
-                                fontSize: '12px',
-                                fontFamily: 'inherit',
-                                padding: '0 8px',
-                                transition: 'all 0.1s ease',
-                              }}
-                              placeholder="\u00b7"
-                            />
-                          </td>
-                        );
-                      })}
-                      <td style={{
-                        borderBottom: `1px solid ${theme.borderLight}`,
-                        borderLeft: `1px solid ${theme.border}`,
-                      }} />
-                    </tr>
-                  );
-                })}
-                {/* Summary Row */}
-                <tr>
-                  <td style={{
-                    padding: '14px 16px',
-                    borderTop: `1px solid ${theme.border}`,
-                    position: 'sticky',
-                    left: 0,
-                    backgroundColor: theme.bg,
-                    zIndex: 5,
-                  }}>
-                    <span style={{
-                      fontSize: '9px',
-                      color: theme.textDim,
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
+                {days.map(day => (
+                  <tr
+                    key={day}
+                    style={{
+                      backgroundColor: isToday(day) 
+                        ? theme.accentBg
+                        : 'transparent',
+                    }}
+                  >
+                    <td style={{
+                      padding: '0 4px',
+                      height: '38px',
+                      borderBottom: `1px solid ${theme.borderLight}`,
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: isToday(day) ? theme.bgAlt : theme.bg,
+                      zIndex: 5,
                     }}>
-                      Avg
-                    </span>
-                  </td>
-                  {trackers.map(tracker => {
-                    const stats = getStats(tracker);
-                    return (
-                      <td
-                        key={tracker.id}
-                        style={{
-                          padding: '14px 12px',
-                          borderTop: `1px solid ${theme.border}`,
-                          borderLeft: `1px solid ${theme.borderLight}`,
-                          textAlign: 'center',
-                        }}
-                      >
-                        <div style={{
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}>
+                        <span style={{
                           fontSize: '12px',
-                          color: stats.count > 0 ? (isDark ? '#fff' : '#000') : theme.textDimmest,
-                          fontWeight: '500',
+                          color: isToday(day) ? theme.accent : (isWeekend(day) ? theme.weekendText : theme.textMuted),
+                          fontWeight: isToday(day) ? '600' : '400',
+                          width: '16px',
                         }}>
-                          {stats.avg}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td style={{
-                    borderTop: `1px solid ${theme.border}`,
-                    borderLeft: `1px solid ${theme.border}`,
-                  }} />
-                </tr>
+                          {day}
+                        </span>
+                        <span style={{
+                          fontSize: '9px',
+                          color: isWeekend(day) ? theme.weekendDayName : theme.textDimmer,
+                          width: '24px',
+                        }}>
+                          {getDayName(day)}
+                        </span>
+                      </div>
+                    </td>
+                    {trackers.map(tracker => {
+                      const cellKey = getCellKey(tracker.id, day);
+                      const value = getCellValue(tracker.id, day);
+                      const isSelected = selectedCell === cellKey;
+                      
+                      return (
+                        <td
+                          key={tracker.id}
+                          style={{
+                            padding: '0',
+                            borderBottom: `1px solid ${theme.borderLight}`,
+                            borderLeft: `1px solid ${theme.borderLight}`,
+                          }}
+                        >
+                          <TrackerCell
+                            tracker={tracker}
+                            day={day}
+                            value={value}
+                            isSelected={isSelected}
+                            onValueChange={(newValue) => updateCellValue(tracker.id, day, newValue)}
+                            onFocus={() => setSelectedCell(cellKey)}
+                            onBlur={() => setSelectedCell(null)}
+                            theme={theme}
+                            isDark={isDark}
+                          />
+                        </td>
+                      );
+                    })}
+                    <td style={{
+                      borderBottom: `1px solid ${theme.borderLight}`,
+                      borderLeft: `1px solid ${theme.border}`,
+                    }} />
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
- 
+
         {/* AI Insights Panel */}
         {showInsights && (
           <div style={{
@@ -822,7 +722,7 @@ const LifeTracker = () => {
                 AI Insights
               </div>
               <button
-                onClick={handleGenerateInsights}
+                onClick={generateInsights}
                 disabled={loadingInsights}
                 style={{
                   background: 'transparent',
@@ -832,27 +732,24 @@ const LifeTracker = () => {
                   cursor: loadingInsights ? 'default' : 'pointer',
                   fontSize: '9px',
                   letterSpacing: '1px',
-                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
                 {loadingInsights ? (
                   <span>
-                    <span className="loading-dot">{'\u25cf'}</span>
-                    <span className="loading-dot" style={{ animationDelay: '0.2s' }}>{'\u25cf'}</span>
-                    <span className="loading-dot" style={{ animationDelay: '0.4s' }}>{'\u25cf'}</span>
+                    <span className="loading-dot">●</span>
+                    <span className="loading-dot" style={{ animationDelay: '0.2s' }}>●</span>
+                    <span className="loading-dot" style={{ animationDelay: '0.4s' }}>●</span>
                   </span>
-                ) : 'REFRESH'}
+                ) : 'GENERATE'}
               </button>
             </div>
- 
-            {/* Summary */}
-            {insights.summary && (
+
+            {insights && insights.content ? (
               <div style={{
                 background: theme.bgCard,
                 border: `1px solid ${theme.borderLight}`,
                 padding: '16px',
-                marginBottom: '20px',
               }}>
                 <div style={{
                   fontSize: '9px',
@@ -861,167 +758,38 @@ const LifeTracker = () => {
                   textTransform: 'uppercase',
                   marginBottom: '10px',
                 }}>
-                  Summary
+                  Latest Insight
                 </div>
                 <p style={{
                   fontSize: '12px',
                   color: theme.text,
                   lineHeight: '1.6',
                   margin: 0,
+                  whiteSpace: 'pre-wrap',
                 }}>
-                  {insights.summary}
+                  {insights.content}
                 </p>
               </div>
-            )}
- 
-            {/* Trends */}
-            {insights.trends.length > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  color: theme.textDim,
-                  textTransform: 'uppercase',
-                  marginBottom: '12px',
-                }}>
-                  Trends
-                </div>
-                {insights.trends.map((trend, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 0',
-                      borderBottom: `1px solid ${theme.borderLight}`,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        fontSize: '14px',
-                        color: trend.direction === 'up' ? theme.positive :
-                               trend.direction === 'down' ? theme.negative : theme.neutral,
-                      }}>
-                        {trend.direction === 'up' ? '\u2191' : trend.direction === 'down' ? '\u2193' : '\u2192'}
-                      </span>
-                      <div>
-                        <div style={{ fontSize: '12px', color: theme.text }}>{trend.metric}</div>
-                        <div style={{ fontSize: '10px', color: theme.textDim }}>{trend.note}</div>
-                      </div>
-                    </div>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: '500',
-                      color: trend.direction === 'up' ? theme.positive :
-                             trend.direction === 'down' ? theme.negative : theme.neutral,
-                    }}>
-                      {trend.change}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
- 
-            {/* Correlations */}
-            {insights.correlations.length > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  color: theme.textDim,
-                  textTransform: 'uppercase',
-                  marginBottom: '12px',
-                }}>
-                  Correlations
-                </div>
-                {insights.correlations.map((corr, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: '10px 12px',
-                      background: theme.bgCard,
-                      border: `1px solid ${theme.borderLight}`,
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '4px',
-                    }}>
-                      <span style={{ fontSize: '11px', color: theme.text }}>{corr.pair}</span>
-                      <span style={{
-                        fontSize: '9px',
-                        padding: '2px 6px',
-                        background: corr.strength === 'strong' ? theme.accentBgStrong :
-                                   corr.strength === 'moderate' ? theme.accentBg : 'transparent',
-                        color: corr.strength === 'strong' ? theme.accent :
-                               corr.strength === 'moderate' ? theme.accent : theme.textDim,
-                        border: corr.strength === 'weak' ? `1px solid ${theme.borderLight}` : 'none',
-                      }}>
-                        {corr.strength}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '10px', color: theme.textDim }}>
-                      {corr.description}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
- 
-            {/* Advice */}
-            {insights.advice.length > 0 && (
-              <div>
-                <div style={{
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  color: theme.textDim,
-                  textTransform: 'uppercase',
-                  marginBottom: '12px',
-                }}>
-                  Recommendations
-                </div>
-                {insights.advice.map((advice, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      gap: '10px',
-                      padding: '10px 0',
-                      borderBottom: `1px solid ${theme.borderLight}`,
-                    }}
-                  >
-                    <span style={{
-                      color: theme.accent,
-                      fontSize: '10px',
-                      marginTop: '2px',
-                    }}>
-                      {'\u2192'}
-                    </span>
-                    <p style={{
-                      fontSize: '11px',
-                      color: theme.text,
-                      lineHeight: '1.5',
-                      margin: 0,
-                    }}>
-                      {typeof advice === 'string' ? advice : advice.text || ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
- 
-            {!insights.summary && insights.trends.length === 0 && (
+            ) : (
               <div style={{
-                color: theme.textDim,
-                fontSize: '11px',
+                background: theme.bgCard,
+                border: `1px solid ${theme.borderLight}`,
+                padding: '40px 16px',
                 textAlign: 'center',
-                padding: '40px 0',
               }}>
-                No insights yet. Add some data and click REFRESH.
+                <div style={{
+                  fontSize: '12px',
+                  color: theme.textMuted,
+                  marginBottom: '12px',
+                }}>
+                  No insights yet
+                </div>
+                <div style={{
+                  fontSize: '10px',
+                  color: theme.textDim,
+                }}>
+                  Click GENERATE to create AI insights
+                </div>
               </div>
             )}
           </div>
@@ -1030,5 +798,5 @@ const LifeTracker = () => {
     </div>
   );
 };
- 
+
 export default LifeTracker;

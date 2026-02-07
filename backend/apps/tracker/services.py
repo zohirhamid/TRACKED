@@ -29,10 +29,17 @@ class TrackerStatsService:
         
         elif tracker.tracker_type in ['number', 'rating']:
             value_field = 'number_value' if tracker.tracker_type == 'number' else 'rating_value'
-            values = [d['entries'][tracker.id].get(value_field)
-                    for d in week_days 
-                    if d['entries'].get(tracker.id) 
-                    and d['entries'][tracker.id].get(value_field) is not None]
+            values = []
+            for d in week_days:
+                if d['entries'].get(tracker.id):
+                    val = d['entries'][tracker.id].get(value_field)
+                    if val is not None:
+                        # Convert to float to handle both int and string values
+                        try:
+                            values.append(float(val))
+                        except (ValueError, TypeError):
+                            pass
+            
             if values:
                 return f"{sum(values) / len(values):.1f}"
             return "—"
@@ -109,5 +116,6 @@ class MonthDataBuilder:
         
         return {
             'date': date_obj.isoformat(),
+            'day': date_obj.day,
             'entries': entries_dict
         }
