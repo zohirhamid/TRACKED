@@ -85,13 +85,13 @@ export async function login(username, password) {
  
 // Tracker API
 export async function fetchMonthData(year, month) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/month/${year}/${month}/`);
+  const res = await apiFetch(`${API_BASE}/tracker/month/${year}/${month}/`);
   if (!res.ok) throw new Error('Failed to fetch month data');
   return res.json();
 }
  
 export async function createTracker(trackerData) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/trackers/`, {
+  const res = await apiFetch(`${API_BASE}/tracker/trackers/create/`, {
     method: 'POST',
     body: JSON.stringify(trackerData),
   });
@@ -100,7 +100,7 @@ export async function createTracker(trackerData) {
 }
  
 export async function updateTracker(id, trackerData) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/trackers/${id}/`, {
+  const res = await apiFetch(`${API_BASE}/tracker/trackers/${id}/`, {
     method: 'PUT',
     body: JSON.stringify(trackerData),
   });
@@ -109,14 +109,14 @@ export async function updateTracker(id, trackerData) {
 }
  
 export async function deleteTracker(id) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/trackers/${id}/`, {
+  const res = await apiFetch(`${API_BASE}/tracker/trackers/${id}/delete/`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete tracker');
 }
  
 export async function saveEntry(trackerId, date, valueData) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/entries/`, {
+  const res = await apiFetch(`${API_BASE}/tracker/entries/`, {
     method: 'POST',
     body: JSON.stringify({ tracker_id: trackerId, date, ...valueData }),
   });
@@ -125,7 +125,7 @@ export async function saveEntry(trackerId, date, valueData) {
 }
  
 export async function deleteEntry(trackerId, date) {
-  const res = await apiFetch(`${API_BASE}/tracker/api/entries/`, {
+  const res = await apiFetch(`${API_BASE}/tracker/entries/`, {
     method: 'POST',
     body: JSON.stringify({ tracker_id: trackerId, date, delete_entry: true }),
   });
