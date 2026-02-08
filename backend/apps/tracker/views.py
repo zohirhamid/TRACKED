@@ -1,18 +1,13 @@
-from django.shortcuts import get_object_or_404
 from datetime import datetime, date
 import calendar
 from .models import Tracker, DailySnapshot, Entry
-from django.db import models
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .serializers import ProfileSerializer, TrackerSerializer, EntrySerializer, DailySnapshotSerializer
-from .constants import SUGGESTED_TRACKERS, get_suggested_trackers_list
 from .services import TrackerStatsService, MonthDataBuilder
 from .utils import get_month_navigation
 from .permissions import CanCreateTracker, IsOwner, IsEntryOwner
 from rest_framework import generics, status
-from typing import Any
 from django.db.models import QuerySet
 
 
@@ -57,19 +52,6 @@ class TrackerListView(generics.ListAPIView):
 
     def get_queryset(self) -> QuerySet[Tracker]: # type: ignore[override]
         return Tracker.objects.filter(user=self.request.user).order_by('-is_active', 'display_order', 'name')
-    
-    def list(self, request, *args, **kwargs):
-        """
-        Override list to always include suggested trackers.
-        """
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        response_data = {
-            'trackers': serializer.data,
-            'suggested_trackers': get_suggested_trackers_list()
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
         
 class TrackerCreateView(generics.CreateAPIView):
     serializer_class = TrackerSerializer
@@ -105,13 +87,30 @@ class EntryCreateView(generics.GenericAPIView):
         snapshot = self.get_or_create_snapshot(request.user, date_obj)
         
         # Check if entry already exists
-        if Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).exists():
-            return Response(
-                {'success': False, 'error': 'Entry already exists. Use update endpoint.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create entry
+        existing_entry = Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).first()
+ 
+        # Handle delete request
+        if data.get('delete_entry'):
+            if existing_entry:
+                existing_entry.delete()
+            return Response({'success': True}, status=status.HTTP_200_OK)
+ 
+        if existing_entry:
+            # Update existing entry
+            existing_entry.clear_values()
+            try:
+                existing_entry.set_value_from_data(data)
+                existing_entry.save()
+                return Response(
+                    {'success': True, 'entry_id': existing_entry.id},
+                    status=status.HTTP_200_OK
+                )
+            except ValueError as e:
+                return Response({
+                    'success': False,
+                    'error': str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
         return self.create_entry(tracker, snapshot, data)
     
     def get_tracker(self, tracker_id, user):
@@ -195,41 +194,3 @@ class EntryDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsEntryOwner]
     queryset = Entry.objects.all()
     serializer_class = EntrySerializer
-
-class QuickAddTrackerView(APIView):
-    """Quickly add a suggested tracker"""
-    permission_classes = [IsAuthenticated, CanCreateTracker]
-    
-    def post(self, request, slug):
-        if slug not in SUGGESTED_TRACKERS:
-            return Response(
-                {'success': False, 'error': 'Invalid tracker'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        tracker_data = SUGGESTED_TRACKERS[slug]
-        
-        # Check if user already has this tracker
-        if Tracker.objects.filter(user=request.user, name=tracker_data['name']).exists():
-            return Response(
-                {'success': False, 'error': 'Tracker already exists'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Get next display order
-        max_order = Tracker.objects.filter(user=request.user).aggregate(
-            max_order=models.Max('display_order')
-        )['max_order'] or 0
-        
-        # Create tracker
-        tracker = Tracker.objects.create(
-            user=request.user,
-            display_order=max_order + 1,
-            **tracker_data
-        )
-        
-        return Response({
-            'success': True,
-            'tracker_id': tracker.id,
-            'tracker_name': tracker.name
-        }, status=status.HTTP_201_CREATED)

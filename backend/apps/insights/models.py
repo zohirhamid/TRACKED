@@ -17,7 +17,7 @@ class Insight(models.Model):
     generated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-generated_at']  # newest first
+        ordering = ['-generated_at'] 
 
     def __str__(self):
         return f"{self.owner.email} - {self.report_type} - {self.period_start}"

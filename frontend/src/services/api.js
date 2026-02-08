@@ -30,8 +30,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 and we haven't retried yet, try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const status = error.response?.status;
+
+    // If 401/403 and we haven't retried yet, try to refresh token
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -136,13 +138,13 @@ export const trackerAPI = {
 export const entryAPI = {
   // Create or update entry
   saveEntry: async (entryData) => {
-    const response = await api.post('/tracker/entries/', entryData);
+    const response = await api.post('/tracker/entries/create/', entryData);
     return response.data;
   },
 
   // Delete entry
   deleteEntry: async (id) => {
-    const response = await api.delete(`/tracker/entries/${id}/`);
+    const response = await api.delete(`/tracker/entries/${id}/delete/`);
     return response.data;
   },
 };

@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from datetime import date, timedelta
-
 from .models import Insight
 from .serializers import InsightSerializer
 

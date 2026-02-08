@@ -1,25 +1,45 @@
 # insights/services.py
 
 import json
+import logging
 from openai import OpenAI
 from django.conf import settings
 
+logger = logging.getLogger(__name__)
 
 def generate_insight_content(tracking_data, report_type, period_start, period_end):
     """Call OpenAI and return structured insight content"""
     
+    if not settings.OPENAI_API_KEY:
+        logger.warning("OPENAI_API_KEY is not configured; returning fallback insights.")
+        return {
+            'summary': 'AI insights are unavailable because the API key is missing.',
+            'trends': [],
+            'correlations': [],
+            'advice': []
+        }
+
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     
     prompt = build_prompt(tracking_data, report_type, period_start, period_end)
     
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": get_system_prompt()},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"}
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": get_system_prompt()},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+    except Exception as exc:
+        logger.exception("Failed to generate insights from OpenAI: %s", exc)
+        return {
+            'summary': 'Unable to generate insights at this time.',
+            'trends': [],
+            'correlations': [],
+            'advice': []
+        }
     
     content = response.choices[0].message.content
     
@@ -31,7 +51,17 @@ def generate_insight_content(tracking_data, report_type, period_start, period_en
             'advice': []
         }
     
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        logger.exception("OpenAI returned invalid JSON for insights.")
+        return {
+            'summary': 'Unable to generate insights due to a formatting issue.',
+            'trends': [],
+            'correlations': [],
+            'advice': []
+        }
+
 
 
 def get_system_prompt():
