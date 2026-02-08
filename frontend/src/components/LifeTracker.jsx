@@ -17,7 +17,6 @@ const LifeTracker = () => {
   const [trackers, setTrackers] = useState([]);
   const [monthData, setMonthData] = useState(null);
   const [insights, setInsights] = useState(null);
-  const [suggestedTrackers, setSuggestedTrackers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal state
@@ -49,9 +48,6 @@ const LifeTracker = () => {
       setMonthData(data);
       setTrackers(data.trackers || []);
       
-      // Load tracker list to get suggested trackers
-      const trackerList = await trackerAPI.listTrackers();
-      setSuggestedTrackers(trackerList.suggested_trackers || []);
     } catch (error) {
       console.error('Failed to load month data:', error);
     } finally {
@@ -85,14 +81,9 @@ const LifeTracker = () => {
       setLoadingInsights(false);
     }
   };
-
-  const handleAddTracker = async ({ type, slug, data }) => {
+  const handleAddTracker = async (data) => {
     try {
-      if (type === 'quick') {
-        await trackerAPI.quickAddTracker(slug);
-      } else {
-        await trackerAPI.createTracker(data);
-      }
+      await trackerAPI.createTracker(data);
       await loadMonthData();
     } catch (error) {
       console.error('Failed to add tracker:', error);
@@ -348,7 +339,6 @@ const LifeTracker = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddTracker}
-        suggestedTrackers={suggestedTrackers}
         theme={theme}
       />
 

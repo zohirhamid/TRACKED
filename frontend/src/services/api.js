@@ -119,12 +119,6 @@ export const trackerAPI = {
     return response.data;
   },
 
-  // Quick add suggested tracker
-  quickAddTracker: async (slug) => {
-    const response = await api.post(`/tracker/trackers/quick-add/${slug}/`);
-    return response.data;
-  },
-
   // Update tracker
   updateTracker: async (id, trackerData) => {
     const response = await api.put(`/tracker/trackers/${id}/`, trackerData);
