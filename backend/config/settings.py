@@ -24,6 +24,7 @@ ALLOWED_HOSTS = [
     "tracked-app-production.up.railway.app",
     "tracked-production.up.railway.app",
     "tracked.zohirhamid.com",
+    "api.tracked.zohirhamid.com",
 ]
 
 TEMPLATES = [
@@ -50,6 +51,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://tracked-app-production.up.railway.app",
     "https://tracked-production.up.railway.app",
     "https://tracked.zohirhamid.com",
+    "https://api.tracked.zohirhamid.com",
 ]
 
 CSRF_COOKIE_SAMESITE = "None"
@@ -65,6 +67,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://tracked-app-production.up.railway.app",
     "https://tracked-production.up.railway.app",
     "https://tracked.zohirhamid.com",
+    "https://api.tracked.zohirhamid.com",
 ]
 
 # ─────────────────────────────────────────────
