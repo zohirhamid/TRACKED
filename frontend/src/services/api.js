@@ -151,23 +151,20 @@ export const entryAPI = {
 
 // Insights APIs
 export const insightsAPI = {
-  // Get latest insight
-  getLatest: async (reportType) => {
-    const response = await api.get(`/insights/latest/${reportType}/`);
+  getLatest: async () => {
+    const response = await api.get('/insights/latest/');
     return response.data;
   },
 
-  // Get insight history
-  getHistory: async (reportType, limit = 30) => {
-    const response = await api.get(`/insights/history/${reportType}/`, {
+  getHistory: async (limit = 10) => {
+    const response = await api.get('/insights/history/', {
       params: { limit },
     });
     return response.data;
   },
 
-  // Generate new insight
-  generate: async (reportType) => {
-    const response = await api.post(`/insights/generate/${reportType}/`);
+  generate: async () => {
+    const response = await api.post('/insights/generate/');
     return response.data;
   },
 };

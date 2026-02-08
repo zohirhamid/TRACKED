@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { trackerAPI, entryAPI, insightsAPI } from '../services/api';
+import { trackerAPI, entryAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import AddTrackerModal from './AddTrackerModal';
 import TrackerCell from './TrackerCell';
 import TrackerManager from './TrackerManager';
+import InsightPanel from './InsightPanel';
 
 const LifeTracker = () => {
   const { logout } = useAuth();
@@ -11,12 +12,10 @@ const LifeTracker = () => {
   const [selectedCell, setSelectedCell] = useState(null);
   const [isDark, setIsDark] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
-  const [loadingInsights, setLoadingInsights] = useState(false);
   
   // Data from backend
   const [trackers, setTrackers] = useState([]);
   const [monthData, setMonthData] = useState(null);
-  const [insights, setInsights] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal state
@@ -28,22 +27,12 @@ const LifeTracker = () => {
     loadMonthData();
   }, [currentDate]);
 
-  // Load insights when panel is shown
-  useEffect(() => {
-    if (showInsights) {
-      loadInsights();
-    }
-  }, [showInsights, currentDate]);
-
   const loadMonthData = async () => {
     setIsLoading(true);
     try {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       const data = await trackerAPI.getMonthView(year, month);
-      
-      console.log('Month data from backend:', data);
-      console.log('Weeks structure:', data.weeks);
       
       setMonthData(data);
       setTrackers(data.trackers || []);
@@ -55,32 +44,6 @@ const LifeTracker = () => {
     }
   };
 
-  const loadInsights = async () => {
-    setLoadingInsights(true);
-    try {
-      const latest = await insightsAPI.getLatest('monthly');
-      if (latest.content) {
-        // Parse the AI-generated content (assuming it's formatted JSON or text)
-        setInsights(latest);
-      }
-    } catch (error) {
-      console.error('Failed to load insights:', error);
-    } finally {
-      setLoadingInsights(false);
-    }
-  };
-
-  const generateInsights = async () => {
-    setLoadingInsights(true);
-    try {
-      const newInsight = await insightsAPI.generate('monthly');
-      setInsights(newInsight);
-    } catch (error) {
-      console.error('Failed to generate insights:', error);
-    } finally {
-      setLoadingInsights(false);
-    }
-  };
   const handleAddTracker = async (data) => {
     try {
       await trackerAPI.createTracker(data);
@@ -108,7 +71,6 @@ const LifeTracker = () => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     try {
-      // Determine value field based on tracker type
       const tracker = trackers.find(t => t.id === trackerId);
       if (!tracker) return;
 
@@ -117,11 +79,9 @@ const LifeTracker = () => {
         date: dateStr,
       };
 
-      // Handle empty value as delete
       if (!value || value === '') {
         entryData.delete_entry = true;
       } else {
-        // Map value to correct field based on tracker type
         switch (tracker.tracker_type) {
           case 'binary':
             entryData.binary_value = value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'yes';
@@ -145,8 +105,6 @@ const LifeTracker = () => {
       }
 
       await entryAPI.saveEntry(entryData);
-      
-      // Reload the month data to get fresh data from backend
       await loadMonthData();
     } catch (error) {
       console.error('Failed to update entry:', error);
@@ -156,17 +114,14 @@ const LifeTracker = () => {
   const getCellValue = (trackerId, day) => {
     if (!monthData || !monthData.weeks) return '';
     
-    // Find the tracker to know its type
     const tracker = trackers.find(t => t.id === trackerId);
     if (!tracker) return '';
     
     for (const week of monthData.weeks) {
-      // week is an array of day objects
       const dayData = week.find(d => d.day === day);
       if (dayData && dayData.entries && dayData.entries[trackerId]) {
         const entry = dayData.entries[trackerId];
         
-        // Extract value based on tracker type
         switch (tracker.tracker_type) {
           case 'binary':
             return entry.binary_value !== undefined ? entry.binary_value.toString() : '';
@@ -225,38 +180,37 @@ const LifeTracker = () => {
   const daysInMonth = getDaysInMonth(currentDate);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Theme colors - softer and easier on the eyes
   const theme = isDark ? {
-    bg: '#1a1a1a',              // Softer black (was #0a0a0a - too dark)
-    bgAlt: '#222222',           // Softer alt bg
-    bgCard: '#252525',          // Softer card (was #111)
-    text: '#e0e0e0',            // Slightly dimmer white
-    textMuted: '#999',          // Lighter muted (was #888)
-    textDim: '#666',            // Lighter dim (was #555)
-    textDimmer: '#444',         // Lighter dimmer (was #333)
-    textDimmest: '#333',        // Lighter dimmest (was #222)
-    border: '#2a2a2a',          // Softer border
-    borderLight: '#242424',     // Softer light border
+    bg: '#1a1a1a',
+    bgAlt: '#222222',
+    bgCard: '#252525',
+    text: '#e0e0e0',
+    textMuted: '#999',
+    textDim: '#666',
+    textDimmer: '#444',
+    textDimmest: '#333',
+    border: '#2a2a2a',
+    borderLight: '#242424',
     accent: '#eab308',
     accentBg: 'rgba(234, 179, 8, 0.06)',
     accentBgStrong: 'rgba(234, 179, 8, 0.1)',
-    weekendText: '#444',        // Lighter
-    weekendDayName: '#383838',  // Lighter
+    weekendText: '#444',
+    weekendDayName: '#383838',
     hoverBorder: '#555',
     hoverText: '#fff',
     inputPlaceholder: '#333',
   } : {
-    bg: '#fafafa',              // Softer white (was #ffffff - too bright)
-    bgAlt: '#f5f5f0',           // Warmer alt
-    bgCard: '#f0f0f0',          // Softer card
-    text: '#2a2a2a',            // Softer black (was #1a1a1a)
-    textMuted: '#666',          // Darker muted
+    bg: '#fafafa',
+    bgAlt: '#f5f5f0',
+    bgCard: '#f0f0f0',
+    text: '#2a2a2a',
+    textMuted: '#666',
     textDim: '#888',
     textDimmer: '#aaa',
     textDimmest: '#ccc',
-    border: '#d0d0d0',          // Softer border
-    borderLight: '#e0e0e0',     // Softer
-    accent: '#ca8a04',          // Slightly darker accent
+    border: '#d0d0d0',
+    borderLight: '#e0e0e0',
+    accent: '#ca8a04',
     accentBg: 'rgba(202, 138, 4, 0.08)',
     accentBgStrong: 'rgba(202, 138, 4, 0.15)',
     weekendText: '#aaa',
@@ -411,6 +365,7 @@ const LifeTracker = () => {
                   fontSize: '9px',
                   letterSpacing: '1px',
                   marginRight: '8px',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -427,6 +382,7 @@ const LifeTracker = () => {
                   fontSize: '9px',
                   letterSpacing: '1px',
                   marginRight: '8px',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -443,6 +399,7 @@ const LifeTracker = () => {
                   fontSize: '9px',
                   letterSpacing: '1px',
                   marginRight: '8px',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -487,6 +444,7 @@ const LifeTracker = () => {
                   cursor: 'pointer',
                   fontSize: '9px',
                   letterSpacing: '1px',
+                  fontFamily: 'inherit',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -539,16 +497,15 @@ const LifeTracker = () => {
                     Date
                   </th>
                   {trackers.map(tracker => {
-                    // Set compact width based on tracker type
-                    let cellWidth = '65px'; // Compact default
+                    let cellWidth = '65px';
                     if (tracker.tracker_type === 'text') {
-                      cellWidth = '140px'; // Double width for text
+                      cellWidth = '140px';
                     } else if (tracker.tracker_type === 'rating') {
-                      cellWidth = '85px'; // For 5 stars
+                      cellWidth = '85px';
                     } else if (tracker.tracker_type === 'duration') {
-                      cellWidth = '75px'; // For "2h 30m"
+                      cellWidth = '75px';
                     } else if (tracker.tracker_type === 'time') {
-                      cellWidth = '70px'; // For "14:30"
+                      cellWidth = '70px';
                     }
                     
                     return (
@@ -690,100 +647,7 @@ const LifeTracker = () => {
         </div>
 
         {/* AI Insights Panel */}
-        {showInsights && (
-          <div style={{
-            width: '320px',
-            flexShrink: 0,
-            borderLeft: `1px solid ${theme.border}`,
-            paddingLeft: '32px',
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '24px',
-            }}>
-              <div style={{
-                fontSize: '10px',
-                letterSpacing: '2px',
-                color: theme.textDim,
-                textTransform: 'uppercase',
-              }}>
-                AI Insights
-              </div>
-              <button
-                onClick={generateInsights}
-                disabled={loadingInsights}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: loadingInsights ? theme.textDimmer : theme.accent,
-                  padding: '6px 12px',
-                  cursor: loadingInsights ? 'default' : 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {loadingInsights ? (
-                  <span>
-                    <span className="loading-dot">●</span>
-                    <span className="loading-dot" style={{ animationDelay: '0.2s' }}>●</span>
-                    <span className="loading-dot" style={{ animationDelay: '0.4s' }}>●</span>
-                  </span>
-                ) : 'GENERATE'}
-              </button>
-            </div>
-
-            {insights && insights.content ? (
-              <div style={{
-                background: theme.bgCard,
-                border: `1px solid ${theme.borderLight}`,
-                padding: '16px',
-              }}>
-                <div style={{
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  color: theme.accent,
-                  textTransform: 'uppercase',
-                  marginBottom: '10px',
-                }}>
-                  Latest Insight
-                </div>
-                <p style={{
-                  fontSize: '12px',
-                  color: theme.text,
-                  lineHeight: '1.6',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {insights.content}
-                </p>
-              </div>
-            ) : (
-              <div style={{
-                background: theme.bgCard,
-                border: `1px solid ${theme.borderLight}`,
-                padding: '40px 16px',
-                textAlign: 'center',
-              }}>
-                <div style={{
-                  fontSize: '12px',
-                  color: theme.textMuted,
-                  marginBottom: '12px',
-                }}>
-                  No insights yet
-                </div>
-                <div style={{
-                  fontSize: '10px',
-                  color: theme.textDim,
-                }}>
-                  Click GENERATE to create AI insights
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {showInsights && <InsightPanel theme={theme} />}
       </div>
     </div>
   );
