@@ -4,10 +4,9 @@ from django.conf import settings
 
 class Insight(models.Model):
     REPORT_TYPES = [
-        ('daily', 'Daily'),
-        ('weekly', 'Weekly'),
-        ('monthly', 'Monthly'),
+        ('analysis', 'Analysis'),
     ]
+    
     id:int
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     report_type = models.CharField(max_length=10, choices=REPORT_TYPES)

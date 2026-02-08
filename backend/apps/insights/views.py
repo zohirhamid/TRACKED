@@ -3,25 +3,20 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from datetime import date, timedelta
+from django.utils.timezone import now
+from apps.tracker.models import Tracker, DailySnapshot, Entry
 from .models import Insight
 from .serializers import InsightSerializer
 
+# Cooldown between generations (in hours)
+GENERATE_COOLDOWN = timedelta(hours=0.001)
 
 class LatestInsightView(APIView):
     """Get the most recent insight of a given type"""
     permission_classes = [IsAuthenticated]
     
-    def get(self, request, report_type):
-        if report_type not in ['daily', 'weekly', 'monthly']:
-            return Response(
-                {'error': 'Invalid report type'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        insight = Insight.objects.filter(
-            owner=request.user,
-            report_type=report_type
-        ).first()
+    def get(self, request):
+        insight = Insight.objects.filter(owner=request.user).first()
         
         if not insight:
             return Response({'content': None, 'message': 'No insight yet'})
@@ -34,46 +29,61 @@ class InsightHistoryView(APIView):
     """Get all insights of a given type for progress tracking"""
     permission_classes = [IsAuthenticated]
     
-    def get(self, request, report_type):
-        if report_type not in ['daily', 'weekly', 'monthly']:
-            return Response(
-                {'error': 'Invalid report type'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    def get(self, request):
+        limit = int(request.query_params.get('limit', 10))
         
-        limit = int(request.query_params.get('limit', 30))
-        
-        insights = Insight.objects.filter(
-            owner=request.user,
-            report_type=report_type
-        )[:limit]
+        insights = Insight.objects.filter(owner=request.user)[:limit]
         
         serializer = InsightSerializer(insights, many=True)
-        return Response({
-            'report_type': report_type,
-            'insights': serializer.data
-        })
-
+        return Response({'insights': serializer.data})
 
 class GenerateInsightView(APIView):
-    """Generate a new insight by calling AI"""
+    """Generate a new AI insight from the user's tracking data"""
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, report_type):
-        if report_type not in ['daily', 'weekly', 'monthly']:
+    def post(self, request):
+        # Determine the analysis period - last 30 days
+        today = date.today()
+        period_start = today - timedelta(days=30)
+        period_end = today
+        
+        # Collect tracking data
+        tracking_data = self.get_tracking_data(request.user, period_start, period_end)
+        
+        # Don't waste an API call if there's no data
+        if not tracking_data:
             return Response(
-                {'error': 'Invalid report type'}, 
+                {'error': 'No tracking data found. Start logging some entries first!'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        period_start, period_end = self.get_period_dates(report_type)
-        tracking_data = self.get_tracking_data(request.user, period_start, period_end)
-        content = self.generate_ai_content(tracking_data, report_type, period_start, period_end)
+        # Rate limit: check cooldown since last insight
+        last_insight = Insight.objects.filter(owner=request.user).first()
+        
+        if last_insight:
+            time_since = now() - last_insight.generated_at
+            if time_since < GENERATE_COOLDOWN:
+                remaining = GENERATE_COOLDOWN - time_since
+                minutes_left = int(remaining.total_seconds() // 60)
+                return Response(
+                    {'error': f'Please wait {minutes_left} more minutes before generating a new insight.'},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
+        
+        # Fetch trackers for AI context
+        from apps.tracker.models import Tracker
+        trackers = Tracker.objects.filter(user=request.user, is_active=True)
+        
+        # Generate insight
+        content = self.generate_ai_content(tracking_data, period_start, period_end, trackers)
+        
+        # Adjust period_start to the earliest day with actual data
+        actual_start = min(tracking_data.keys())
         
         insight = Insight.objects.create(
             owner=request.user,
-            report_type=report_type,
-            period_start=period_start,
+            report_type='analysis',
+            period_start=actual_start,
             period_end=period_end,
             content=content
         )
@@ -81,31 +91,11 @@ class GenerateInsightView(APIView):
         serializer = InsightSerializer(insight)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    def generate_ai_content(self, tracking_data, report_type, period_start, period_end):
+    def generate_ai_content(self, tracking_data, period_start, period_end, trackers):
         from .services import generate_insight_content
-        return generate_insight_content(tracking_data, report_type, period_start, period_end)
-    
-    def get_period_dates(self, report_type):
-        today = date.today()
-        
-        if report_type == 'daily':
-            return today, today
-        
-        elif report_type == 'weekly':
-            start = today - timedelta(days=today.weekday())
-            end = start + timedelta(days=6)
-            return start, end
-        
-        elif report_type == 'monthly':
-            start = today.replace(day=1)
-            next_month = today.replace(day=28) + timedelta(days=4)
-            end = next_month - timedelta(days=next_month.day)
-            return start, end
-        
-        return today, today
+        return generate_insight_content(tracking_data, 'analysis', period_start, period_end, trackers)
     
     def get_tracking_data(self, user, period_start, period_end):
-        # FIXED: Changed import path from 'tracker.models' to 'apps.tracker.models'
         from apps.tracker.models import Tracker, DailySnapshot, Entry
         
         trackers = Tracker.objects.filter(user=user, is_active=True)
@@ -120,7 +110,7 @@ class GenerateInsightView(APIView):
         
         for snapshot in snapshots:
             day_key = snapshot.date.isoformat()
-            data[day_key] = {}
+            day_entries = {}
             
             entries = Entry.objects.filter(
                 daily_snapshot=snapshot,
@@ -131,7 +121,11 @@ class GenerateInsightView(APIView):
                 tracker_name = entry.tracker.name
                 value = self.get_entry_value(entry)
                 if value is not None:
-                    data[day_key][tracker_name] = value
+                    day_entries[tracker_name] = value
+            
+            # Only include days that actually have entries
+            if day_entries:
+                data[day_key] = day_entries
         
         return data
 
