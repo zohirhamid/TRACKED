@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Login = () => {
+const DEMO_USERNAME = 'demo';
+const DEMO_PASSWORD = 'london1234';
+
+const Login = ({ onBack }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { login, signup } = useAuth();
 
@@ -25,6 +29,18 @@ const Login = () => {
     }
   };
 
+  const handleDemo = async () => {
+    setError('');
+    setIsDemoLoading(true);
+
+    const result = await login(DEMO_USERNAME, DEMO_PASSWORD);
+
+    if (!result.success) {
+      setError('Demo account unavailable. Please try again later.');
+      setIsDemoLoading(false);
+    }
+  };
+
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
     setError('');
@@ -39,6 +55,8 @@ const Login = () => {
     accent: '#eab308',
     accentBg: 'rgba(234, 179, 8, 0.06)',
   };
+
+  const anyLoading = isLoading || isDemoLoading;
 
   return (
     <div style={{
@@ -63,6 +81,23 @@ const Login = () => {
           textAlign: 'center',
           marginBottom: '40px',
         }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: theme.textMuted,
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                marginBottom: '24px',
+                display: 'block',
+              }}
+            >
+              ← Back
+            </button>
+          )}
           <div style={{
             fontSize: '10px',
             letterSpacing: '3px',
@@ -199,7 +234,7 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={anyLoading}
             style={{
               width: '100%',
               background: theme.accent,
@@ -209,10 +244,10 @@ const Login = () => {
               fontSize: '10px',
               letterSpacing: '2px',
               textTransform: 'uppercase',
-              cursor: isLoading ? 'default' : 'pointer',
+              cursor: anyLoading ? 'default' : 'pointer',
               fontFamily: 'inherit',
               fontWeight: '500',
-              opacity: isLoading ? 0.6 : 1,
+              opacity: anyLoading ? 0.6 : 1,
             }}
           >
             {isLoading
@@ -220,6 +255,41 @@ const Login = () => {
               : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
+
+        {/* Divider */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          margin: '24px 0',
+        }}>
+          <div style={{ flex: 1, height: '1px', background: theme.border }} />
+          <span style={{ fontSize: '9px', color: theme.textMuted, letterSpacing: '1px' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: theme.border }} />
+        </div>
+
+        {/* Demo Button */}
+        <button
+          onClick={handleDemo}
+          disabled={anyLoading}
+          style={{
+            width: '100%',
+            background: 'transparent',
+            border: `1px solid ${theme.accent}`,
+            color: theme.accent,
+            padding: '14px',
+            fontSize: '10px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            cursor: anyLoading ? 'default' : 'pointer',
+            fontFamily: 'inherit',
+            fontWeight: '500',
+            opacity: anyLoading ? 0.6 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {isDemoLoading ? 'Loading demo...' : 'Try Demo'}
+        </button>
 
         <div style={{
           textAlign: 'center',

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import LifeTracker from './components/LifeTracker';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
 
   if (isLoading) {
     return (
@@ -22,7 +24,9 @@ function AppContent() {
     );
   }
 
-  return isAuthenticated ? <LifeTracker /> : <Login />;
+  if (isAuthenticated) return <LifeTracker />;
+  if (showLogin) return <Login onBack={() => setShowLogin(false)} />;
+  return <LandingPage onSignIn={() => setShowLogin(true)} />;
 }
 
 function App() {
