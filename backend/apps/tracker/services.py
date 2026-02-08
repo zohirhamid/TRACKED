@@ -4,7 +4,6 @@ from .models import DailySnapshot, Entry
 from .serializers import EntrySerializer
 
 class TrackerStatsService:
-
     @staticmethod
     def calculate_week_stats(weeks, trackers):
         """Calculate statistics for each tracker across all weeks"""

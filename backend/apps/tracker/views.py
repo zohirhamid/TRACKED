@@ -6,18 +6,21 @@ from django.db import models
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from .serializers import ProfileSerializer, TrackerSerializer, EntrySerializer, DailySnapshotSerializer
 from .constants import SUGGESTED_TRACKERS, get_suggested_trackers_list
 from .services import TrackerStatsService, MonthDataBuilder
 from .utils import get_month_navigation
-from .permissions import CanCreateTracker
+from .permissions import CanCreateTracker, IsOwner, IsEntryOwner
+from rest_framework import generics, status
+from typing import Any
+from django.db.models import QuerySet
 
 
-class MonthView(APIView):
+class MonthView(generics.GenericAPIView):
     """The main Excel-like grid view API for a specific month"""
     permission_classes = [IsAuthenticated]
-
+    serializer_class = TrackerSerializer
+    
     def get(self, request, year, month):
         trackers = self.get_trackers(request.user)
         
@@ -26,7 +29,7 @@ class MonthView(APIView):
         weeks = month_builder.build_weeks(trackers)
         
         # Serialize trackers
-        tracker_serializer = TrackerSerializer(trackers, many=True)
+        tracker_serializer = self.get_serializer(trackers, many=True)
         
         data = {
             'trackers': tracker_serializer.data,
@@ -46,35 +49,156 @@ class MonthView(APIView):
             user=user, 
             is_active=True
         ).order_by('display_order')
-    
 
-class TrackerListView(APIView):
+class TrackerListView(generics.ListAPIView):
     """Returns all user's trackers in a list format"""
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        trackers = Tracker.objects.filter(
-            user=request.user
-        ).order_by('-is_active', 'display_order', 'name')
-        
-        serializer = TrackerSerializer(trackers, many=True)
-        
-        response_data = {
-            'trackers': serializer.data
-        }
-        
-        # Only show suggestions if user has no trackers
-        if not trackers.exists():
-            response_data['suggested_trackers'] = get_suggested_trackers_list()
-        
-        return Response(response_data, status=status.HTTP_200_OK)
+    permission_classes = [IsAuthenticated, IsOwner]
+    serializer_class = TrackerSerializer
 
+    def get_queryset(self) -> QuerySet[Tracker]: # type: ignore[override]
+        return Tracker.objects.filter(user=self.request.user).order_by('-is_active', 'display_order', 'name')
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Override list to always include suggested trackers.
+        """
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        response_data = {
+            'trackers': serializer.data,
+            'suggested_trackers': get_suggested_trackers_list()
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+class TrackerCreateView(generics.CreateAPIView):
+    serializer_class = TrackerSerializer
+    permission_classes = [IsAuthenticated, CanCreateTracker]
+
+    # sets the owner at creation time
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class TrackerUpdateView(generics.UpdateAPIView):
+    queryset = Tracker.objects.all()
+    serializer_class = TrackerSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+class EntryCreateView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EntrySerializer
+
+    def post(self, request):
+        data = request.data
+        
+        # Validate tracker
+        tracker, error = self.get_tracker(data.get('tracker_id'), request.user)
+        if error:
+            return error
+        
+        # Validate date
+        date_obj, error = self.parse_date(data.get('date'))
+        if error:
+            return error
+        
+        # Get or create snapshot
+        snapshot = self.get_or_create_snapshot(request.user, date_obj)
+        
+        # Check if entry already exists
+        if Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).exists():
+            return Response(
+                {'success': False, 'error': 'Entry already exists. Use update endpoint.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create entry
+        return self.create_entry(tracker, snapshot, data)
+    
+    def get_tracker(self, tracker_id, user):
+        try:
+            return Tracker.objects.get(id=tracker_id, user=user), None
+        except Tracker.DoesNotExist:
+            return None, Response(
+                {'success': False, 'error': 'Invalid tracker'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def parse_date(self, date_str):
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%d').date(), None
+        except (ValueError, TypeError):
+            return None, Response(
+                {'success': False, 'error': 'Invalid date format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def get_or_create_snapshot(self, user, date_obj):
+        snapshot, _ = DailySnapshot.objects.get_or_create(user=user, date=date_obj)
+        return snapshot
+    
+    def create_entry(self, tracker, snapshot, data):
+        entry = Entry.objects.create(tracker=tracker, daily_snapshot=snapshot)
+        
+        try:
+            entry.set_value_from_data(data)
+            entry.save()
+            return Response(
+                {'success': True, 'entry_id': entry.id}, 
+                status=status.HTTP_201_CREATED
+            )
+        except ValueError as e:
+            entry.delete()  # Clean up if validation fails
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class EntryUpdateView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated, IsEntryOwner]
+    serializer_class = EntrySerializer
+
+    def patch(self, request, pk):
+        # Get entry and verify ownership
+        try:
+            entry = Entry.objects.get(
+                id=pk, 
+                tracker__user=request.user
+            )
+        except Entry.DoesNotExist:
+            return Response(
+                {'success': False, 'error': 'Entry not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Update entry
+        entry.clear_values()
+        
+        try:
+            entry.set_value_from_data(request.data)
+            entry.save()
+            return Response(
+                {'success': True, 'entry_id': entry.id}, 
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class TrackerDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = Tracker.objects.all()
+    serializer_class = TrackerSerializer
+
+class EntryDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsEntryOwner]
+    queryset = Entry.objects.all()
+    serializer_class = EntrySerializer
 
 class QuickAddTrackerView(APIView):
     """Quickly add a suggested tracker"""
     permission_classes = [IsAuthenticated, CanCreateTracker]
-    
-    
     
     def post(self, request, slug):
         if slug not in SUGGESTED_TRACKERS:
@@ -109,133 +233,3 @@ class QuickAddTrackerView(APIView):
             'tracker_id': tracker.id,
             'tracker_name': tracker.name
         }, status=status.HTTP_201_CREATED)
-    
-    
-class TrackerCreateView(APIView):
-    """API endpoint to create a new tracker"""
-    permission_classes = [IsAuthenticated, CanCreateTracker]
-
-    def post(self, request):
-        serializer = TrackerSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class TrackerUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, pk):
-        tracker = get_object_or_404(Tracker, id=pk)
-
-        if tracker.user != request.user:
-            return Response(
-                {'success': False, 'error': 'Unauthorized'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = TrackerSerializer(tracker, data=request.data)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-class TrackerDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, pk):
-        tracker = get_object_or_404(Tracker, id=pk, user=request.user)
-        tracker.delete()
-        
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class EntryCreateUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        data = request.data
-        
-        # Validate tracker
-        tracker, error = self.get_tracker(data.get('tracker_id'), request.user)
-        if error:
-            return error
-        
-        # Validate date
-        date_obj, error = self.parse_date(data.get('date'))
-        if error:
-            return error
-        
-        # Get or create snapshot
-        snapshot = self.get_or_create_snapshot(request.user, date_obj)
-        
-        # Handle delete
-        if data.get('delete_entry', False):
-            return self.delete_entry(tracker, snapshot)
-        
-        # Create/update entry
-        return self.save_entry(tracker, snapshot, data)
-    
-    def get_tracker(self, tracker_id, user):
-        try:
-            return Tracker.objects.get(id=tracker_id, user=user), None
-        except Tracker.DoesNotExist:
-            return None, Response(
-                {'success': False, 'error': 'Invalid tracker'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-    
-    def parse_date(self, date_str):
-        try:
-            return datetime.strptime(date_str, '%Y-%m-%d').date(), None
-        except (ValueError, TypeError):
-            return None, Response(
-                {'success': False, 'error': 'Invalid date format'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-    def get_or_create_snapshot(self, user, date_obj):
-        snapshot, _ = DailySnapshot.objects.get_or_create(user=user, date=date_obj)
-        return snapshot
-
-    def delete_entry(self, tracker, snapshot):
-        Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).delete()
-        return Response({'success': True, 'deleted': True}, status=status.HTTP_200_OK)
-
-    def save_entry(self, tracker, snapshot, data):
-        entry, _ = Entry.objects.get_or_create(tracker=tracker, daily_snapshot=snapshot)
-        
-        entry.clear_values()
-        
-        try:
-            entry.set_value_from_data(data)
-            entry.save()
-            return Response({'success': True, 'entry_id': entry.id}, status=status.HTTP_200_OK)
-        except ValueError as e:
-            return Response({
-                'success': False,
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-class EntryDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, pk):
-        entry = get_object_or_404(Entry, id=pk)
-    
-        if entry.tracker.user != request.user:
-            return Response(
-                {'success': False, 'error': 'Unauthorized'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        entry.delete()
-        
-        return Response(status=status.HTTP_204_NO_CONTENT)

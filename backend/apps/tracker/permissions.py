@@ -1,5 +1,7 @@
 # tracker/permissions.py
 from rest_framework import permissions
+from rest_framework.permissions import BasePermission
+
 # from subscriptions.models import Subscription  # Uncomment when you implement subscriptions
 
 
@@ -27,3 +29,12 @@ class CanCreateTracker(permissions.BasePermission):
         #     return Subscription.is_user_pro(request.user)
         
         return True  # Unlimited for now
+
+class IsOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+class IsEntryOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        # Entry ownership is through tracker
+        return obj.tracker.user == request.user

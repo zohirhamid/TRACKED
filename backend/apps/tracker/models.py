@@ -77,11 +77,12 @@ class Entry(models.Model):
     id:int
     tracker = models.ForeignKey(Tracker, on_delete=models.CASCADE)
     daily_snapshot = models.ForeignKey(DailySnapshot, on_delete=models.CASCADE)
+
+    # Entry type
     binary_value = models.BooleanField(null=True, blank=True)
     number_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     time_value = models.TimeField(null=True, blank=True)
     duration_minutes = models.IntegerField(null=True, blank=True, help_text="Duration in minutes")
-    
     text_value = models.TextField(null=True, blank=True, help_text="For text/notes tracker")
     rating_value = models.IntegerField(null=True, blank=True, help_text="For rating tracker")
 
