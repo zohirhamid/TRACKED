@@ -48,6 +48,13 @@ def signup_view(request):
         status=status.HTTP_201_CREATED,
     )
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def user_count_view(request):
+    count = User.objects.filter(is_active=True).count()
+    return Response({'count': count}, status=status.HTTP_200_OK)
+
 class LandingPageView(TemplateView):
     template_name = 'landing_page.html'
     

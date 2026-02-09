@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { coreAPI } from '../services/api';
 
 const DEMO_USERNAME = 'demo';
 const DEMO_PASSWORD = 'london2024';
-
 const LandingPage = ({ onSignIn }) => {
   const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [userCount, setUserCount] = useState(null);
   const { login } = useAuth();
 
   const handleDemo = async () => {
@@ -16,6 +17,27 @@ const LandingPage = ({ onSignIn }) => {
       alert('Demo account unavailable. Please try again later.');
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUserCount = async () => {
+      try {
+        const data = await coreAPI.getUserCount();
+        if (isMounted && Number.isFinite(data?.count)) {
+          setUserCount(data.count);
+        }
+      } catch (error) {
+        // Silently fail; keep placeholder on landing page.
+      }
+    };
+
+    loadUserCount();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const theme = {
     bg: '#0a0a0a',
@@ -146,6 +168,36 @@ const LandingPage = ({ onSignIn }) => {
         textAlign: 'center',
       }}>
         <div className="fade-up fade-up-1" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: '12px',
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            border: `1px solid ${theme.border}`,
+            background: theme.bgCard,
+            fontSize: '10px',
+            letterSpacing: '1px',
+            color: theme.textMuted,
+            textTransform: 'uppercase',
+            borderRadius: '2px',
+            minWidth: '140px',
+            justifyContent: 'center',
+          }}>
+            <span style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              background: '#22c55e',
+            }} />
+            {Number.isFinite(userCount) ? userCount.toLocaleString() : '...'} users
+          </div>
+        </div>
+
+        <div className="fade-up fade-up-1" style={{
           fontSize: '9px',
           letterSpacing: '3px',
           color: theme.accent,
@@ -222,6 +274,7 @@ const LandingPage = ({ onSignIn }) => {
             Sign Up
           </button>
         </div>
+
       </section>
 
       {/* ── How It Works ── */}

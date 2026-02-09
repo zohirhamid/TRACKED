@@ -101,6 +101,14 @@ export const authAPI = {
   },
 };
 
+// Core APIs
+export const coreAPI = {
+  getUserCount: async () => {
+    const response = await api.get('/core/users/count/');
+    return response.data;
+  },
+};
+
 // Tracker APIs
 export const trackerAPI = {
   // Get month view (main Excel-like grid)
