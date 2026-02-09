@@ -3,7 +3,7 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "startCommand": "gunicorn config.wsgi --bind 0.0.0.0:$PORT",
+    "startCommand": "python manage.py migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
