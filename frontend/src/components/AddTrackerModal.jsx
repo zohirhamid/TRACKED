@@ -17,6 +17,7 @@ const AddTrackerModal = ({ isOpen, onClose, onAdd, theme }) => {
     { value: 'duration', label: 'Duration', description: 'Time in minutes (e.g., Exercise: 45 min)' },
     { value: 'time', label: 'Time', description: 'Specific time (e.g., Wake up: 7:00 AM)' },
     { value: 'text', label: 'Text', description: 'Short note (e.g., Journal entry)' },
+    { value: 'prayer', label: 'Islamic Prayer', description: 'Track the 5 daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha)' },
   ];
 
   // Focus management and escape key handler

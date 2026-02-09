@@ -52,6 +52,19 @@ class TrackerStatsService:
                         if d['entries'].get(tracker.id) 
                         and d['entries'][tracker.id].get('text_value'))
             return f"{count}/{len(week_days)}"
+
+        elif tracker.tracker_type == 'prayer':
+            total = len(week_days) * 5
+            completed = 0
+            for d in week_days:
+                entry = d['entries'].get(tracker.id)
+                if not entry:
+                    continue
+                prayer_values = entry.get('prayer_values') or {}
+                for value in prayer_values.values():
+                    if value is True:
+                        completed += 1
+            return f"{completed}/{total}"
         
         return "—"
     

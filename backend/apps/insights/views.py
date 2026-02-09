@@ -9,7 +9,7 @@ from .models import Insight
 from .serializers import InsightSerializer
 
 # Cooldown between generations (in hours)
-GENERATE_COOLDOWN = timedelta(hours=0.001)
+GENERATE_COOLDOWN = timedelta(hours=1)
 
 class LatestInsightView(APIView):
     """Get the most recent insight of a given type"""

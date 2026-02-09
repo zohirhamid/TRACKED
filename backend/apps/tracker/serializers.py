@@ -24,7 +24,7 @@ class EntrySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'tracker', 'daily_snapshot',
             'binary_value', 'number_value', 'time_value', 
-            'duration_minutes', 'text_value', 'rating_value',
+            'duration_minutes', 'text_value', 'rating_value', 'prayer_values',
             'created_at', 'updated_at'
         ]
 

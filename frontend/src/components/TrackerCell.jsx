@@ -22,6 +22,27 @@ const TrackerCell = ({
     onValueChange(newValue);
   };
 
+  const prayerOptions = [
+    { key: 'fajr', label: 'Fajr', short: 'F' },
+    { key: 'dhuhr', label: 'Dhuhr', short: 'D' },
+    { key: 'asr', label: 'Asr', short: 'A' },
+    { key: 'maghrib', label: 'Maghrib', short: 'M' },
+    { key: 'isha', label: 'Isha', short: 'I' },
+  ];
+
+  const normalizePrayerValues = (val) => {
+    if (!val) return {};
+    if (typeof val === 'object') return val;
+    if (typeof val === 'string') {
+      try {
+        return JSON.parse(val);
+      } catch (error) {
+        return {};
+      }
+    }
+    return {};
+  };
+
   // Binary (check/x icons)
   if (tracker.tracker_type === 'binary') {
     const isChecked = localValue === 'true' || localValue === true;
@@ -63,6 +84,87 @@ const TrackerCell = ({
         ) : (
           <span style={{ color: theme.textDimmest, fontSize: '12px' }}>·</span>
         )}
+      </div>
+    );
+  }
+
+  // Prayer (5 daily prayers with on/off)
+  if (tracker.tracker_type === 'prayer') {
+    const prayerValues = normalizePrayerValues(localValue);
+
+    const togglePrayer = (key) => {
+      const current = prayerValues[key];
+      let next;
+      if (current === true) {
+        next = false;
+      } else if (current === false) {
+        next = null;
+      } else {
+        next = true;
+      }
+
+      const updated = { ...prayerValues, [key]: next };
+      const allEmpty = prayerOptions.every((option) => updated[option.key] === null || updated[option.key] === undefined);
+      handleChange(allEmpty ? '' : updated);
+    };
+
+    const renderStateIcon = (state) => {
+      if (state === true) {
+        return <span style={{ color: '#22c55e', fontSize: '12px', fontWeight: 'bold' }}>✓</span>;
+      }
+      if (state === false) {
+        return <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 'bold' }}>✗</span>;
+      }
+      return <span style={{ color: theme.textDimmest, fontSize: '10px' }}>·</span>;
+    };
+
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '38px',
+          background: isSelected ? theme.accentBgStrong : 'transparent',
+          borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
+          borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '4px',
+          alignItems: 'center',
+          padding: '0 6px',
+          transition: 'all 0.1s ease',
+        }}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        tabIndex={0}
+      >
+        {prayerOptions.map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => {
+              onFocus();
+              togglePrayer(option.key);
+            }}
+            title={option.label}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${theme.borderLight}`,
+              borderRadius: '4px',
+              padding: '2px 0',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.1s ease',
+            }}
+          >
+            <span style={{ fontSize: '8px', color: theme.textDimmer, letterSpacing: '0.5px' }}>
+              {option.short}
+            </span>
+            {renderStateIcon(prayerValues[option.key])}
+          </button>
+        ))}
       </div>
     );
   }

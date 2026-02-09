@@ -31,6 +31,7 @@ class Tracker(models.Model):
         ('duration', 'Duration (Start/End Time)'),
         ('text', 'Text/Notes'),
         ('rating', 'Rating/Scale'),
+        ('prayer', 'Islamic Prayer (5x)'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -85,6 +86,7 @@ class Entry(models.Model):
     duration_minutes = models.IntegerField(null=True, blank=True, help_text="Duration in minutes")
     text_value = models.TextField(null=True, blank=True, help_text="For text/notes tracker")
     rating_value = models.IntegerField(null=True, blank=True, help_text="For rating tracker")
+    prayer_values = models.JSONField(null=True, blank=True, help_text="For prayer tracker")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -135,6 +137,7 @@ class Entry(models.Model):
         self.duration_minutes = None
         self.text_value = None
         self.rating_value = None
+        self.prayer_values = None
 
     def set_value_from_data(self, data):
         """
@@ -161,6 +164,9 @@ class Entry(models.Model):
         
         elif tracker.tracker_type == 'rating':
             self._set_rating_value(data)
+
+        elif tracker.tracker_type == 'prayer':
+            self._set_prayer_values(data)
     
     def _set_rating_value(self, data):
         """Set and validate rating value"""
@@ -177,3 +183,41 @@ class Entry(models.Model):
             raise ValueError(f'Rating must be at most {self.tracker.max_value}')
         
         self.rating_value = rating_int
+
+    def _set_prayer_values(self, data):
+        """Set and validate prayer values"""
+        values = data.get('prayer_values')
+        if values is None:
+            self.prayer_values = None
+            return
+
+        if isinstance(values, str):
+            try:
+                import json
+                values = json.loads(values)
+            except Exception:
+                raise ValueError('Invalid prayer values')
+
+        if not isinstance(values, dict):
+            raise ValueError('Invalid prayer values')
+
+        prayer_keys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
+        normalized = {}
+        for key in prayer_keys:
+            raw = values.get(key, None)
+            if raw is True or raw is False or raw is None:
+                normalized[key] = raw
+            elif isinstance(raw, str):
+                lowered = raw.lower()
+                if lowered == 'true':
+                    normalized[key] = True
+                elif lowered == 'false':
+                    normalized[key] = False
+                elif lowered in ['null', 'none', '']:
+                    normalized[key] = None
+                else:
+                    raise ValueError('Invalid prayer values')
+            else:
+                raise ValueError('Invalid prayer values')
+
+        self.prayer_values = normalized

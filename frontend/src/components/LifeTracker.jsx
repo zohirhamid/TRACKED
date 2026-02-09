@@ -79,7 +79,13 @@ const LifeTracker = () => {
         date: dateStr,
       };
 
-      if (!value || value === '') {
+      const isEmptyPrayerValues = tracker.tracker_type === 'prayer'
+        && value
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && Object.values(value).every(v => v === null || v === undefined);
+
+      if (!value || value === '' || isEmptyPrayerValues) {
         entryData.delete_entry = true;
       } else {
         switch (tracker.tracker_type) {
@@ -100,6 +106,9 @@ const LifeTracker = () => {
             break;
           case 'text':
             entryData.text_value = value;
+            break;
+          case 'prayer':
+            entryData.prayer_values = value;
             break;
         }
       }
@@ -135,6 +144,8 @@ const LifeTracker = () => {
             return entry.time_value || '';
           case 'text':
             return entry.text_value || '';
+          case 'prayer':
+            return entry.prayer_values || null;
           default:
             return '';
         }
@@ -506,6 +517,8 @@ const LifeTracker = () => {
                       cellWidth = '75px';
                     } else if (tracker.tracker_type === 'time') {
                       cellWidth = '70px';
+                    } else if (tracker.tracker_type === 'prayer') {
+                      cellWidth = '150px';
                     }
                     
                     return (
