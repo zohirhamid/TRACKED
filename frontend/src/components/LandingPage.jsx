@@ -409,7 +409,7 @@ const LandingPage = ({ onSignIn }) => {
           Built by Zohir Hamid
         </span>
         <a
-          href="https://github.com/yourusername"
+          href="https://github.com/zohirhamid"
           target="_blank"
           rel="noopener noreferrer"
           style={{
