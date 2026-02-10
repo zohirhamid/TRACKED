@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const DEMO_USERNAME = 'demo';
-const DEMO_PASSWORD = 'london1234';
+const DEMO_PASSWORD = 'london2024';
 
 const Login = ({ onBack }) => {
   const [username, setUsername] = useState('');
