@@ -30,15 +30,9 @@ const InsightPanel = ({ theme }) => {
     setError(null);
     try {
       const data = await insightsAPI.generate();
-
-      if (!data.task_id) {
-        throw new Error('Missing task id from server');
-      }
-
-      const insight = await pollInsightTask(data.task_id);
-      setInsights(insight);
+      setInsights(data);
     } catch (err) {
-      const message = err.response?.data?.error || err.message || 'Failed to generate insight';
+      const message = err.response?.data?.error || 'Failed to generate insight';
       setError(message);
     } finally {
       setGenerating(false);
@@ -234,29 +228,6 @@ const InsightPanel = ({ theme }) => {
       )}
     </div>
   );
-};
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const pollInsightTask = async (taskId) => {
-  const maxAttempts = 60;
-  const intervalMs = 2000;
-
-  for (let i = 0; i < maxAttempts; i++) {
-    const statusData = await insightsAPI.getGenerateStatus(taskId);
-
-    if (statusData.status === 'success' && statusData.insight) {
-      return statusData.insight;
-    }
-
-    if (statusData.status === 'failed') {
-      throw new Error(statusData.error || 'Insight generation failed');
-    }
-
-    await sleep(intervalMs);
-  }
-
-  throw new Error('Insight generation timed out');
 };
 
 
