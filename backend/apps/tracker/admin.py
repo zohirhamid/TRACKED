@@ -17,8 +17,8 @@ class TrackerAdmin(admin.ModelAdmin):
 
 @admin.register(DailySnapshot)
 class DailySnapshotAdmin(admin.ModelAdmin):
-    list_display = ('user', 'date', 'is_complete')
-    list_filter = ('is_complete', 'date')
+    list_display = ('user', 'date')
+    list_filter = ('date',)
     search_fields = ('user__email',)
     date_hierarchy = 'date'
 

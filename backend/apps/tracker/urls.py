@@ -7,7 +7,6 @@ from .views import (
     TrackerUpdateView,
     TrackerDeleteView,
     EntryCreateView,
-    EntryUpdateView,
     EntryDeleteView,
 )
 
@@ -25,6 +24,5 @@ urlpatterns = [
     
     # Entry CRUD
     path('entries/create/', EntryCreateView.as_view(), name='entry_create'),
-    path('entries/<int:pk>/', EntryUpdateView.as_view(), name='entry_update'),  # PATCH
     path('entries/<int:pk>/delete/', EntryDeleteView.as_view(), name='entry_delete'),  # DELETE
 ]

@@ -32,4 +32,4 @@ class EntrySerializer(serializers.ModelSerializer):
 class DailySnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailySnapshot
-        fields = ['id', 'user', 'date', 'overall_notes', 'is_complete']
+        fields = ['id', 'user', 'date']

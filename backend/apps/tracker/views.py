@@ -3,8 +3,8 @@ import calendar
 from .models import Tracker, DailySnapshot, Entry
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .serializers import ProfileSerializer, TrackerSerializer, EntrySerializer, DailySnapshotSerializer
-from .services import TrackerStatsService, MonthDataBuilder
+from .serializers import TrackerSerializer, EntrySerializer
+from .services import MonthDataBuilder
 from .utils import get_month_navigation
 from .permissions import CanCreateTracker, IsOwner, IsEntryOwner
 from rest_framework import generics, status
@@ -29,7 +29,6 @@ class MonthView(generics.GenericAPIView):
         data = {
             'trackers': tracker_serializer.data,
             'weeks': weeks,
-            'week_stats': TrackerStatsService.calculate_week_stats(weeks, trackers),
             'month_name': calendar.month_name[month],
             'months': [{'name': calendar.month_abbr[m], 'number': m} for m in range(1, 13)],
             'total_days': calendar.monthrange(year, month)[1],
@@ -147,39 +146,6 @@ class EntryCreateView(generics.GenericAPIView):
             )
         except ValueError as e:
             entry.delete()  # Clean up if validation fails
-            return Response({
-                'success': False,
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-class EntryUpdateView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated, IsEntryOwner]
-    serializer_class = EntrySerializer
-
-    def patch(self, request, pk):
-        # Get entry and verify ownership
-        try:
-            entry = Entry.objects.get(
-                id=pk, 
-                tracker__user=request.user
-            )
-        except Entry.DoesNotExist:
-            return Response(
-                {'success': False, 'error': 'Entry not found'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Update entry
-        entry.clear_values()
-        
-        try:
-            entry.set_value_from_data(request.data)
-            entry.save()
-            return Response(
-                {'success': True, 'entry_id': entry.id}, 
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
             return Response({
                 'success': False,
                 'error': str(e)
