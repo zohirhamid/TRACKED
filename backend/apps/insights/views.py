@@ -4,12 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from datetime import date, timedelta
 from django.utils.timezone import now
+from celery.result import AsyncResult
 from apps.tracker.models import Tracker, DailySnapshot, Entry
 from .models import Insight
 from .serializers import InsightSerializer
+from .tasks import generate_insight_task
 
 # Cooldown between generations (in hours)
-GENERATE_COOLDOWN = timedelta(hours=1)
+GENERATE_COOLDOWN = timedelta(hours=0)
 
 class LatestInsightView(APIView):
     """Get the most recent insight of a given type"""
@@ -38,26 +40,22 @@ class InsightHistoryView(APIView):
         return Response({'insights': serializer.data})
 
 class GenerateInsightView(APIView):
-    """Generate a new AI insight from the user's tracking data"""
+    """Queue a new AI insight generation job"""
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        # Determine the analysis period - last 30 days
         today = date.today()
         period_start = today - timedelta(days=30)
         period_end = today
         
-        # Collect tracking data
         tracking_data = self.get_tracking_data(request.user, period_start, period_end)
         
-        # Don't waste an API call if there's no data
         if not tracking_data:
             return Response(
                 {'error': 'No tracking data found. Start logging some entries first!'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Rate limit: check cooldown since last insight
         last_insight = Insight.objects.filter(owner=request.user).first()
         
         if last_insight:
@@ -70,34 +68,13 @@ class GenerateInsightView(APIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS
                 )
         
-        # Fetch trackers for AI context
-        from apps.tracker.models import Tracker
-        trackers = Tracker.objects.filter(user=request.user, is_active=True)
-        
-        # Generate insight
-        content = self.generate_ai_content(tracking_data, period_start, period_end, trackers)
-        
-        # Adjust period_start to the earliest day with actual data
-        actual_start = min(tracking_data.keys())
-        
-        insight = Insight.objects.create(
-            owner=request.user,
-            report_type='analysis',
-            period_start=actual_start,
-            period_end=period_end,
-            content=content
+        task = generate_insight_task.delay(request.user.id, 'analysis')
+        return Response(
+            {'task_id': task.id, 'status': 'queued'},
+            status=status.HTTP_202_ACCEPTED
         )
-        
-        serializer = InsightSerializer(insight)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    def generate_ai_content(self, tracking_data, period_start, period_end, trackers):
-        from .services import generate_insight_content
-        return generate_insight_content(tracking_data, 'analysis', period_start, period_end, trackers)
-    
+
     def get_tracking_data(self, user, period_start, period_end):
-        from apps.tracker.models import Tracker, DailySnapshot, Entry
-        
         trackers = Tracker.objects.filter(user=user, is_active=True)
         
         snapshots = DailySnapshot.objects.filter(
@@ -123,7 +100,6 @@ class GenerateInsightView(APIView):
                 if value is not None:
                     day_entries[tracker_name] = value
             
-            # Only include days that actually have entries
             if day_entries:
                 data[day_key] = day_entries
         
@@ -146,3 +122,42 @@ class GenerateInsightView(APIView):
             return entry.text_value
         
         return None
+
+
+class GenerateInsightStatusView(APIView):
+    """Get status of an insight generation task."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, task_id):
+        result = AsyncResult(task_id)
+        state = result.state
+
+        if state in {'PENDING', 'RECEIVED', 'STARTED', 'RETRY'}:
+            return Response({'status': 'pending'})
+
+        if state == 'FAILURE':
+            return Response(
+                {'status': 'failed', 'error': 'Insight generation failed.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        if state == 'SUCCESS':
+            task_result = result.result or {}
+            insight_id = task_result.get('insight_id')
+            if not insight_id:
+                return Response(
+                    {'status': 'failed', 'error': 'Insight generation failed.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            insight = Insight.objects.filter(id=insight_id, owner=request.user).first()
+            if not insight:
+                return Response(
+                    {'status': 'failed', 'error': 'Insight not found for this user.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            serializer = InsightSerializer(insight)
+            return Response({'status': 'success', 'insight': serializer.data})
+
+        return Response({'status': 'pending'})

@@ -175,6 +175,11 @@ export const insightsAPI = {
     const response = await api.post('/insights/generate/');
     return response.data;
   },
+
+  getGenerateStatus: async (taskId) => {
+    const response = await api.get(`/insights/generate/status/${taskId}/`);
+    return response.data;
+  },
 };
 
 export default api;
