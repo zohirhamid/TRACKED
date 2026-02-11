@@ -68,7 +68,7 @@ class GenerateInsightView(APIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS
                 )
         
-        task = generate_insight_task.delay(request.user.id, 'analysis') # type: ignore
+        task = generate_insight_task.delay(request.user.id, 'analysis')
         return Response(
             {'task_id': task.id, 'status': 'queued'},
             status=status.HTTP_202_ACCEPTED
@@ -136,9 +136,9 @@ class GenerateInsightStatusView(APIView):
             return Response({'status': 'pending'})
 
         if state == 'FAILURE':
-            error_message = str(result.result) if result.result else 'Insight generation failed.'
             return Response(
-                {'status': 'failed', 'error': error_message},
+                {'status': 'failed', 'error': 'Insight generation failed.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         if state == 'SUCCESS':
@@ -147,6 +147,7 @@ class GenerateInsightStatusView(APIView):
             if not insight_id:
                 return Response(
                     {'status': 'failed', 'error': 'Insight generation failed.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
             insight = Insight.objects.filter(id=insight_id, owner=request.user).first()
