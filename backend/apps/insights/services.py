@@ -34,13 +34,12 @@ def generate_insight_content(tracking_data, report_type, period_start, period_en
             ],
             response_format={"type": "json_object"}
         )
+        content = response.choices[0].message.content
     except Exception as exc:
         logger.exception("Failed to generate insights from OpenAI: %s", exc)
         return _fallback_response('Unable to generate insights at this time.')
     
-    content = response.choices[0].message.content
-    
-    if content is None:
+    if not content:
         return _fallback_response('Unable to generate insights.')
     
     try:
