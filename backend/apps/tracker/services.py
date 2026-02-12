@@ -1,5 +1,6 @@
 # tracker/services.py
 from datetime import datetime
+import calendar
 from .models import DailySnapshot, Entry
 from .serializers import EntrySerializer
 
@@ -18,12 +19,10 @@ class MonthDataBuilder:
         Returns:
             list: List of weeks, where each week is a list of day data
         """
-        import calendar
-        
         weeks = []
+        
         current_week = []
         num_days = calendar.monthrange(self.year, self.month)[1]
-        
         for day in range(1, num_days + 1):
             date_obj = datetime(self.year, self.month, day).date()
             day_data = self._build_day_data(date_obj, trackers)
@@ -32,7 +31,7 @@ class MonthDataBuilder:
             if date_obj.weekday() == 6 or day == num_days:
                 weeks.append(current_week)
                 current_week = []
-        
+
         return weeks
     
     def _build_day_data(self, date_obj, trackers):
@@ -46,7 +45,7 @@ class MonthDataBuilder:
         Returns:
             dict: Day data with date and entries
         """
-        snapshot, created = DailySnapshot.objects.get_or_create(
+        snapshot, _ = DailySnapshot.objects.get_or_create(
             user=self.user,
             date=date_obj
         )

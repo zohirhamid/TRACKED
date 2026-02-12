@@ -11,6 +11,7 @@ class InsightSerializer(serializers.ModelSerializer):
             'period_start',
             'period_end',
             'content',
-            'generated_at',
+            'created_at',
+            'updated_at',
         ]
         read_only_fields = fields

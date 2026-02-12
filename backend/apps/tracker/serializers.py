@@ -7,7 +7,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'user', 'avatar_url', 'google_id']
 
-
 class TrackerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tracker
@@ -16,7 +15,6 @@ class TrackerSerializer(serializers.ModelSerializer):
             'display_order', 'is_active', 'min_value', 'max_value', 'created_at'
         ]
         read_only_fields = ['id', 'user', 'created_at']
-
 
 class EntrySerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,8 +26,8 @@ class EntrySerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
-
 class DailySnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailySnapshot
         fields = ['id', 'user', 'date']
+

@@ -9,6 +9,8 @@ from .utils import get_month_navigation
 from .permissions import CanCreateTracker, IsOwner, IsEntryOwner
 from rest_framework import generics, status
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 
 
 class MonthView(generics.GenericAPIView):
@@ -17,7 +19,10 @@ class MonthView(generics.GenericAPIView):
     serializer_class = TrackerSerializer
     
     def get(self, request, year, month):
-        trackers = self.get_trackers(request.user)
+        trackers = Tracker.objects.filter(
+            user=request.user,
+            is_active=True
+        ).order_by('display_order')
         
         # Use the MonthDataBuilder service
         month_builder = MonthDataBuilder(request.user, year, month)
@@ -31,18 +36,13 @@ class MonthView(generics.GenericAPIView):
             'weeks': weeks,
             'month_name': calendar.month_name[month],
             'months': [{'name': calendar.month_abbr[m], 'number': m} for m in range(1, 13)],
+            
             'total_days': calendar.monthrange(year, month)[1],
             'today': date.today().isoformat(),
             **get_month_navigation(year, month),
         }
 
         return Response(data, status=status.HTTP_200_OK)
-
-    def get_trackers(self, user):
-        return Tracker.objects.filter(
-            user=user, 
-            is_active=True
-        ).order_by('display_order')
 
 class TrackerListView(generics.ListAPIView):
     """Returns all user's trackers in a list format"""
@@ -67,89 +67,51 @@ class TrackerUpdateView(generics.UpdateAPIView):
 
 class EntryCreateView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = EntrySerializer
 
     def post(self, request):
         data = request.data
-        
-        # Validate tracker
-        tracker, error = self.get_tracker(data.get('tracker_id'), request.user)
-        if error:
-            return error
-        
-        # Validate date
-        date_obj, error = self.parse_date(data.get('date'))
-        if error:
-            return error
-        
-        # Get or create snapshot
-        snapshot = self.get_or_create_snapshot(request.user, date_obj)
-        
-        # Check if entry already exists
-        existing_entry = Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).first()
- 
-        # Handle delete request
-        if data.get('delete_entry'):
-            if existing_entry:
-                existing_entry.delete()
-            return Response({'success': True}, status=status.HTTP_200_OK)
- 
-        if existing_entry:
-            # Update existing entry
-            existing_entry.clear_values()
-            try:
-                existing_entry.set_value_from_data(data)
-                existing_entry.save()
-                return Response(
-                    {'success': True, 'entry_id': existing_entry.id},
-                    status=status.HTTP_200_OK
-                )
-            except ValueError as e:
-                return Response({
-                    'success': False,
-                    'error': str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-        return self.create_entry(tracker, snapshot, data)
-    
-    def get_tracker(self, tracker_id, user):
-        try:
-            return Tracker.objects.get(id=tracker_id, user=user), None
-        except Tracker.DoesNotExist:
-            return None, Response(
-                {'success': False, 'error': 'Invalid tracker'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-    
-    def parse_date(self, date_str):
-        try:
-            return datetime.strptime(date_str, '%Y-%m-%d').date(), None
-        except (ValueError, TypeError):
-            return None, Response(
-                {'success': False, 'error': 'Invalid date format'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-    def get_or_create_snapshot(self, user, date_obj):
-        snapshot, _ = DailySnapshot.objects.get_or_create(user=user, date=date_obj)
-        return snapshot
-    
-    def create_entry(self, tracker, snapshot, data):
-        entry = Entry.objects.create(tracker=tracker, daily_snapshot=snapshot)
-        
+
+        tracker = get_object_or_404(Tracker, id=data.get('tracker_id'), user=request.user)
+        date_obj = self.parse_date(data.get('date'))
+        snapshot, _ = DailySnapshot.objects.get_or_create(user=request.user, date=date_obj)
+
+        # Handle delete request (no need to fetch first)
+        if data.get("delete_entry"):
+            Entry.objects.filter(tracker=tracker, daily_snapshot=snapshot).delete()
+            return Response({"success": True}, status=status.HTTP_200_OK)
+
+        # Get or create the entry
+        entry, created = Entry.objects.get_or_create(
+            tracker=tracker,
+            daily_snapshot=snapshot
+        )
+
+        # If updating existing entry, clear old values first
+        if not created:
+            entry.clear_values()
+
         try:
             entry.set_value_from_data(data)
             entry.save()
-            return Response(
-                {'success': True, 'entry_id': entry.id}, 
-                status=status.HTTP_201_CREATED
-            )
         except ValueError as e:
-            entry.delete()  # Clean up if validation fails
-            return Response({
-                'success': False,
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # keep your old behavior: if we created it and validation fails, remove it
+            if created:
+                entry.delete()
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {"success": True, "entry_id": entry.id},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
+
+    def parse_date(self, date_str):
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            raise ValidationError({"date": "Invalid date format. Use YYYY-MM-DD."})
 
 class TrackerDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]

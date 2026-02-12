@@ -84,7 +84,6 @@ Rules:
 - For rating trackers, interpret values relative to their scale (e.g. 4/5 is good, 4/10 is below average)
 - If there are only 1-2 days of data, focus on summary and advice rather than trends"""
 
-
 def build_prompt(tracking_data, report_type, period_start, period_end, trackers):
     """Build a prompt that includes tracker context so the AI understands the data."""
     

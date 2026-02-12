@@ -6,17 +6,18 @@ const InsightPanel = ({ theme }) => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [reportType, setReportType] = useState('daily');
 
   // Load latest insight on mount
   useEffect(() => {
     loadInsight();
-  }, []);
+  }, [reportType]);
 
   const loadInsight = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await insightsAPI.getLatest();
+      const data = await insightsAPI.getLatest(reportType);
       setInsights(data.content ? data : null);
     } catch (err) {
       console.error('Failed to load insight:', err);
@@ -29,7 +30,7 @@ const InsightPanel = ({ theme }) => {
     setGenerating(true);
     setError(null);
     try {
-      const data = await insightsAPI.generate();
+      const data = await insightsAPI.generate(reportType);
       setInsights(data);
     } catch (err) {
       const message = err.response?.data?.error || 'Failed to generate insight';
@@ -86,6 +87,38 @@ const InsightPanel = ({ theme }) => {
             </span>
           ) : 'ANALYZE'}
         </button>
+      </div>
+
+      {/* Report type selector */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '16px',
+      }}>
+        <div style={{
+          fontSize: '9px',
+          color: theme.textDim,
+          letterSpacing: '0.5px',
+        }}>
+          Report type
+        </div>
+        <select
+          value={reportType}
+          onChange={(e) => setReportType(e.target.value)}
+          style={{
+            background: theme.bgCard,
+            border: `1px solid ${theme.borderLight}`,
+            color: theme.text,
+            padding: '6px 8px',
+            fontSize: '10px',
+            fontFamily: 'inherit',
+          }}
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
       </div>
 
       {/* Error message */}
@@ -189,15 +222,15 @@ const InsightPanel = ({ theme }) => {
             </Section>
           )}
 
-          {/* Generated timestamp */}
-          {insights?.generated_at && (
+          {/* Updated timestamp */}
+          {(insights?.updated_at || insights?.created_at) && (
             <div style={{
               fontSize: '9px',
               color: theme.textDimmer,
               textAlign: 'right',
               letterSpacing: '0.5px',
             }}>
-              {new Date(insights.generated_at).toLocaleString()}
+              {new Date(insights.updated_at || insights.created_at).toLocaleString()}
             </div>
           )}
         </div>

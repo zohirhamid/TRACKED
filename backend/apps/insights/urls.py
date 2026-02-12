@@ -1,12 +1,11 @@
 # insights/urls.py
 
 from django.urls import path
-from .views import LatestInsightView, InsightHistoryView, GenerateInsightView
+from .views import InsightListView, GenerateInsightView
 
 app_name = 'insights'
 
 urlpatterns = [
-    path('latest/', LatestInsightView.as_view(), name='latest'),
-    path('history/', InsightHistoryView.as_view(), name='history'),
+    path('', InsightListView.as_view(), name='list'),
     path('generate/', GenerateInsightView.as_view(), name='generate'),
 ]
