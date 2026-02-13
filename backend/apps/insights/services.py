@@ -1,64 +1,15 @@
-# insights/services.py
 import json
-import logging
 from openai import OpenAI
 from django.conf import settings
 
-logger = logging.getLogger(__name__)
+MODEL_NAME = "gpt-4o-mini"
 
-def generate_insight_content(tracking_data, report_type, period_start, period_end, trackers):
-    """Call OpenAI and return structured insight content
-    
-    Args:
-        tracking_data: dict of {date_str: {tracker_name: value}}
-        report_type: 'daily', 'weekly', or 'monthly'
-        period_start: date object
-        period_end: date object
-        trackers: QuerySet of active Tracker objects (provides context like units and scales)
-    """
-    
-    if not settings.OPENAI_API_KEY:
-        logger.warning("OPENAI_API_KEY is not configured; returning fallback insights.")
-        return _fallback_response('AI insights are unavailable because the API key is missing.')
+MISSING_API_KEY_MSG = "AI insights are unavailable because the API key is missing."
+GENERATION_FAILED_MSG = "Unable to generate insights at this time."
+EMPTY_CONTENT_MSG = "Unable to generate insights."
+INVALID_JSON_MSG = "Unable to generate insights due to a formatting issue."
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    
-    prompt = build_prompt(tracking_data, report_type, period_start, period_end, trackers)
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": get_system_prompt()},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"}
-        )
-        content = response.choices[0].message.content
-    except Exception as exc:
-        logger.exception("Failed to generate insights from OpenAI: %s", exc)
-        return _fallback_response('Unable to generate insights at this time.')
-    
-    if not content:
-        return _fallback_response('Unable to generate insights.')
-    
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        logger.exception("OpenAI returned invalid JSON for insights.")
-        return _fallback_response('Unable to generate insights due to a formatting issue.')
-
-def _fallback_response(summary):
-    """Return a safe fallback when AI generation fails."""
-    return {
-        'summary': summary,
-        'trends': [],
-        'correlations': [],
-        'advice': []
-    }
-
-def get_system_prompt():
-    return """You are a personal wellness analyst. You analyze daily tracking data and provide actionable insights.
+SYSTEM_PROMPT = """You are a personal wellness analyst. You analyze daily tracking data and provide actionable insights.
 
 Always respond with valid JSON in this exact format:
 {
@@ -82,6 +33,57 @@ Rules:
 - Use the tracker metadata (units, scales) to interpret values correctly
 - For rating trackers, interpret values relative to their scale (e.g. 4/5 is good, 4/10 is below average)
 - If there are only 1-2 days of data, focus on summary and advice rather than trends"""
+
+
+def generate_insight_content(tracking_data, report_type, period_start, period_end, trackers):
+    """Call OpenAI and return structured insight content
+    
+    Args:
+        tracking_data: dict of {date_str: {tracker_name: value}}
+        report_type: 'daily', 'weekly', or 'monthly'
+        period_start: date object
+        period_end: date object
+        trackers: QuerySet of active Tracker objects (provides context like units and scales)
+    """
+    
+    if not settings.OPENAI_API_KEY:
+        return _fallback_response(MISSING_API_KEY_MSG)
+
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    prompt = build_prompt(tracking_data, report_type, period_start, period_end, trackers)
+
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        content = response.choices[0].message.content
+    except Exception:
+        return _fallback_response(GENERATION_FAILED_MSG)
+
+    if not content:
+        return _fallback_response(EMPTY_CONTENT_MSG)
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return _fallback_response(INVALID_JSON_MSG)
+
+
+def _fallback_response(summary):
+    """Return a safe fallback when AI generation fails."""
+    return {
+        'summary': summary,
+        'trends': [],
+        'correlations': [],
+        'advice': []
+    }
 
 def build_prompt(tracking_data, report_type, period_start, period_end, trackers):
     """Build a prompt that includes tracker context so the AI understands the data."""
