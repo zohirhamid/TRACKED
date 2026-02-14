@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { trackerAPI, entryAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import AddTrackerModal from './AddTrackerModal';
+import PlaceholderModal from './PlaceholderModal';
 import TrackerCell from './TrackerCell';
 import TrackerManager from './TrackerManager';
 import InsightPanel from './InsightPanel';
+import UserMenu from './UserMenu';
 
 const LifeTracker = () => {
   const { logout } = useAuth();
@@ -12,6 +14,7 @@ const LifeTracker = () => {
   const [selectedCell, setSelectedCell] = useState(null);
   const [isDark, setIsDark] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
+  const [placeholderModalTitle, setPlaceholderModalTitle] = useState(null);
   
   // Data from backend
   const [trackers, setTrackers] = useState([]);
@@ -315,6 +318,14 @@ const LifeTracker = () => {
         theme={theme}
       />
 
+      <PlaceholderModal
+        isOpen={Boolean(placeholderModalTitle)}
+        onClose={() => setPlaceholderModalTitle(null)}
+        title={placeholderModalTitle || ''}
+        description="working on it 🛠️"
+        theme={theme}
+      />
+
       <div style={{ display: 'flex', gap: '32px' }}>
         {/* Main Tracker */}
         <div style={{ flex: 1 }}>
@@ -400,23 +411,6 @@ const LifeTracker = () => {
                 INSIGHTS
               </button>
               <button
-                onClick={logout}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  marginRight: '8px',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                LOGOUT
-              </button>
-              <button
                 onClick={() => setIsDark(!isDark)}
                 style={{
                   background: 'transparent',
@@ -475,6 +469,13 @@ const LifeTracker = () => {
               >
                 →
               </button>
+              <div style={{ marginLeft: '8px' }}>
+                <UserMenu
+                  theme={theme}
+                  onLogout={logout}
+                  onOpenPlaceholder={(title) => setPlaceholderModalTitle(title)}
+                />
+              </div>
             </div>
           </header>
 
