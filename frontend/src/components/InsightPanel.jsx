@@ -1,17 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import { insightsAPI } from '../services/api';
 
-const InsightPanel = ({ theme }) => {
+const isNonEmptyPrayerValues = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return Object.values(value).some(v => v !== null && v !== undefined && v !== '');
+};
+
+const hasEntryData = (entry, trackerType) => {
+  if (!entry) return false;
+
+  switch (trackerType) {
+    case 'binary':
+      return entry.binary_value !== null && entry.binary_value !== undefined;
+    case 'number':
+      return entry.number_value !== null && entry.number_value !== undefined;
+    case 'rating':
+      return entry.rating_value !== null && entry.rating_value !== undefined;
+    case 'duration':
+      return entry.duration_minutes !== null && entry.duration_minutes !== undefined;
+    case 'time':
+      return entry.time_value !== null && entry.time_value !== undefined && String(entry.time_value).trim() !== '';
+    case 'text':
+      return entry.text_value !== null && entry.text_value !== undefined && String(entry.text_value).trim() !== '';
+    case 'prayer':
+      return isNonEmptyPrayerValues(entry.prayer_values);
+    default:
+      return (
+        entry.binary_value !== null && entry.binary_value !== undefined
+        || entry.number_value !== null && entry.number_value !== undefined
+        || entry.rating_value !== null && entry.rating_value !== undefined
+        || entry.duration_minutes !== null && entry.duration_minutes !== undefined
+        || (entry.time_value !== null && entry.time_value !== undefined && String(entry.time_value).trim() !== '')
+        || (entry.text_value !== null && entry.text_value !== undefined && String(entry.text_value).trim() !== '')
+        || isNonEmptyPrayerValues(entry.prayer_values)
+      );
+  }
+};
+
+const getPeriodDays = (reportType, monthData, currentDate) => {
+  if (!monthData?.weeks?.length) return [];
+
+  const targetDay = currentDate.getDate();
+
+  if (reportType === 'daily') {
+    for (const week of monthData.weeks) {
+      const dayData = week.find(d => d.day === targetDay);
+      if (dayData) return [dayData];
+    }
+    return [];
+  }
+
+  if (reportType === 'weekly') {
+    for (const week of monthData.weeks) {
+      if (week.some(d => d.day === targetDay)) return week;
+    }
+    return [];
+  }
+
+  // monthly
+  return monthData.weeks.flat();
+};
+
+const computeCoverage = ({ reportType, monthData, trackers, currentDate }) => {
+  const periodDays = getPeriodDays(reportType, monthData, currentDate);
+  const trackerList = Array.isArray(trackers) ? trackers : [];
+
+  const totalPossible = periodDays.length * trackerList.length;
+  if (totalPossible === 0) {
+    return { ratio: 0, filled: 0, totalPossible: 0, periodDays: periodDays.length };
+  }
+
+  let filled = 0;
+  for (const dayData of periodDays) {
+    for (const tracker of trackerList) {
+      const entry = dayData?.entries?.[tracker.id];
+      if (hasEntryData(entry, tracker.tracker_type)) filled += 1;
+    }
+  }
+
+  return {
+    ratio: filled / totalPossible,
+    filled,
+    totalPossible,
+    periodDays: periodDays.length,
+  };
+};
+
+const periodLabel = (reportType) => {
+  switch (reportType) {
+    case 'daily':
+      return 'day';
+    case 'weekly':
+      return 'week';
+    case 'monthly':
+      return 'month';
+    default:
+      return 'period';
+  }
+};
+
+const InsightPanel = ({ theme, monthData, trackers, currentDate }) => {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [reportType, setReportType] = useState('daily');
 
+  const coverage = computeCoverage({ reportType, monthData, trackers, currentDate });
+  const hasEnoughData = coverage.ratio >= 0.5;
+
   // Load latest insight on mount
   useEffect(() => {
+    if (!hasEnoughData) {
+      setInsights(null);
+      setError(null);
+      setLoading(false);
+      setGenerating(false);
+      return;
+    }
     loadInsight();
-  }, [reportType]);
+  }, [reportType, hasEnoughData]);
 
   const loadInsight = async () => {
     setLoading(true);
@@ -27,6 +135,7 @@ const InsightPanel = ({ theme }) => {
   };
 
   const generateInsight = async () => {
+    if (!hasEnoughData) return;
     setGenerating(true);
     setError(null);
     try {
@@ -66,18 +175,19 @@ const InsightPanel = ({ theme }) => {
         </div>
         <button
           onClick={generateInsight}
-          disabled={generating}
+          disabled={generating || !hasEnoughData}
           style={{
             background: 'transparent',
-            border: `1px solid ${generating ? theme.borderLight : theme.accent}`,
-            color: generating ? theme.textDimmer : theme.accent,
+            border: `1px solid ${generating || !hasEnoughData ? theme.borderLight : theme.accent}`,
+            color: generating || !hasEnoughData ? theme.textDimmer : theme.accent,
             padding: '6px 12px',
-            cursor: generating ? 'default' : 'pointer',
+            cursor: generating || !hasEnoughData ? 'default' : 'pointer',
             fontSize: '9px',
             letterSpacing: '1px',
             fontFamily: 'inherit',
             transition: 'all 0.15s ease',
           }}
+          title={!hasEnoughData ? 'Not enough data to generate insights yet' : 'Analyze'}
         >
           {generating ? (
             <span>
@@ -154,7 +264,7 @@ const InsightPanel = ({ theme }) => {
       )}
 
       {/* Content */}
-      {!loading && !generating && content && (
+      {!loading && !generating && hasEnoughData && content && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Period badge */}
           {insights?.period_start && insights?.period_end && (
@@ -236,8 +346,32 @@ const InsightPanel = ({ theme }) => {
         </div>
       )}
 
+      {/* Insufficient data */}
+      {!loading && !generating && !error && !hasEnoughData && (
+        <div style={{
+          background: theme.bgCard,
+          border: `1px solid ${theme.borderLight}`,
+          padding: '18px 16px',
+        }}>
+          <div style={{
+            fontSize: '12px',
+            color: theme.textMuted,
+            marginBottom: '8px',
+          }}>
+            Not enough data to get insights
+          </div>
+          <div style={{
+            fontSize: '10px',
+            color: theme.textDim,
+            lineHeight: '1.6',
+          }}>
+            Add a bit more tracking for this {periodLabel(reportType)} (need at least 50% filled).
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && !generating && !content && !error && (
+      {!loading && !generating && hasEnoughData && !content && !error && (
         <div style={{
           background: theme.bgCard,
           border: `1px solid ${theme.borderLight}`,

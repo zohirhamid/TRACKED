@@ -661,7 +661,14 @@ const LifeTracker = () => {
         </div>
 
         {/* AI Insights Panel */}
-        {showInsights && <InsightPanel theme={theme} />}
+        {showInsights && (
+          <InsightPanel
+            theme={theme}
+            monthData={monthData}
+            trackers={trackers}
+            currentDate={currentDate}
+          />
+        )}
       </div>
     </div>
   );
