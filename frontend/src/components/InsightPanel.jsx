@@ -99,7 +99,7 @@ const periodLabel = (reportType) => {
   }
 };
 
-const InsightPanel = ({ theme, monthData, trackers, currentDate }) => {
+const InsightPanel = ({ theme, monthData, trackers, currentDate, layout = 'side' }) => {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -108,6 +108,7 @@ const InsightPanel = ({ theme, monthData, trackers, currentDate }) => {
 
   const coverage = computeCoverage({ reportType, monthData, trackers, currentDate });
   const hasEnoughData = coverage.ratio >= 0.5;
+  const isInline = layout === 'inline';
 
   // Load latest insight on mount
   useEffect(() => {
@@ -153,10 +154,14 @@ const InsightPanel = ({ theme, monthData, trackers, currentDate }) => {
 
   return (
     <div style={{
-      width: '320px',
+      width: isInline ? '100%' : '320px',
       flexShrink: 0,
-      borderLeft: `1px solid ${theme.border}`,
-      paddingLeft: '32px',
+      borderLeft: isInline ? 'none' : `1px solid ${theme.border}`,
+      paddingLeft: isInline ? 0 : '32px',
+      border: isInline ? `1px solid ${theme.border}` : 'none',
+      borderRadius: isInline ? '10px' : 0,
+      padding: isInline ? '16px' : 0,
+      background: isInline ? theme.bg : 'transparent',
     }}>
       {/* Header */}
       <div style={{

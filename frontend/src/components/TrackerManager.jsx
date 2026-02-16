@@ -209,20 +209,10 @@ const TrackerManager = ({ isOpen, onClose, trackers, onUpdate, theme }) => {
                           fontSize: '14px',
                           color: theme.text,
                           marginBottom: '4px',
+                          fontWeight: '700',
                         }}
                       >
                         {tracker.name}
-                        {tracker.unit && (
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              color: theme.textMuted,
-                              marginLeft: '8px',
-                            }}
-                          >
-                            ({tracker.unit})
-                          </span>
-                        )}
                       </div>
                       <div
                         style={{

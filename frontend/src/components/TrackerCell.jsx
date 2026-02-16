@@ -230,7 +230,7 @@ const TrackerCell = ({
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
           textAlign: 'center',
-          fontSize: '12px',
+          fontSize: '11px',
           fontFamily: 'inherit',
           padding: '0 8px',
           transition: 'all 0.1s ease',
@@ -292,7 +292,7 @@ const TrackerCell = ({
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '11px',
             color: totalMinutes > 0 ? (isDark ? '#fff' : '#000') : theme.textDimmest,
             transition: 'all 0.1s ease',
           }}
@@ -453,7 +453,7 @@ const TrackerCell = ({
           }}
         />
         <span style={{
-          fontSize: '12px',
+          fontSize: '11px',
           color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
           pointerEvents: 'none',
         }}>
@@ -484,7 +484,7 @@ const TrackerCell = ({
         borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
         color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
         textAlign: 'center',
-        fontSize: '12px',
+        fontSize: '11px',
         fontFamily: 'inherit',
         padding: '0 8px',
         transition: 'all  0.1s ease',

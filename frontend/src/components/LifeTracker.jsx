@@ -229,7 +229,7 @@ const LifeTracker = () => {
       backgroundColor: theme.bg,
       color: theme.text,
       fontFamily: '"JetBrains Mono", "SF Mono", "Fira Code", monospace',
-      padding: '32px',
+      padding: '16px 32px 32px',
       boxSizing: 'border-box',
       transition: 'background-color 0.2s ease, color 0.2s ease',
     }}>
@@ -275,349 +275,341 @@ const LifeTracker = () => {
         theme={theme}
       />
 
-      <div style={{ display: 'flex', gap: '32px' }}>
-        {/* Main Tracker */}
-        <div style={{ flex: 1 }}>
-          {/* Header */}
-          <header style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            marginBottom: '40px',
-            borderBottom: `1px solid ${theme.border}`,
-            paddingBottom: '24px',
-          }}>
-            <div>
-              <div style={{
-                fontSize: '10px',
-                letterSpacing: '3px',
-                color: theme.textDim,
-                marginBottom: '8px',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
-                Life Tracker
-                <span style={{
-                  background: theme.accentBgStrong,
-                  color: theme.accent,
-                  padding: '2px 6px',
-                  fontSize: '8px',
-                  letterSpacing: '1px',
-                }}>
-                  AI
-                </span>
-              </div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: '300',
-                margin: 0,
-                letterSpacing: '-0.5px',
-                color: isDark ? '#fff' : '#000',
-              }}>
-                {getMonthName(currentDate)}
-              </h1>
-            </div>
-            
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Header (sticky) */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backgroundColor: theme.bg,
+          paddingTop: '8px',
+          paddingBottom: '16px',
+        }}>
+          <div>
             <div style={{
+              fontSize: '10px',
+              letterSpacing: '3px',
+              color: theme.textDim,
+              marginBottom: '8px',
+              textTransform: 'uppercase',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '8px',
             }}>
-              <button
-                onClick={() => setShowManagerModal(true)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  marginRight: '8px',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                MANAGE
-              </button>
-              <button
-                onClick={() => setShowInsights(!showInsights)}
-                style={{
-                  background: showInsights ? theme.accentBgStrong : 'transparent',
-                  border: `1px solid ${showInsights ? theme.accent : theme.borderLight}`,
-                  color: showInsights ? theme.accent : theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  marginRight: '8px',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                INSIGHTS
-              </button>
-              <button
-                onClick={toggle}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  marginRight: '8px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {isDark ? '☀' : '☾'}
-              </button>
-              <button
-                onClick={() => navigateMonth(-1)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                ←
-              </button>
-              <button
-                onClick={() => setCurrentDate(new Date())}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                  letterSpacing: '1px',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                TODAY
-              </button>
-              <button
-                onClick={() => navigateMonth(1)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.borderLight}`,
-                  color: theme.textDim,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                →
-              </button>
-              <div style={{ marginLeft: '8px' }}>
-                <UserMenu
-                  theme={theme}
-                  onLogout={logout}
-                  onOpenPlaceholder={(title) => setPlaceholderModalTitle(title)}
-                />
-              </div>
+              Life Tracker
+              <span style={{
+                background: theme.accentBgStrong,
+                color: theme.accent,
+                padding: '2px 6px',
+                fontSize: '8px',
+                letterSpacing: '1px',
+              }}>
+                AI
+              </span>
             </div>
-          </header>
-
-          {/* Main Grid */}
-          <div style={{
-            overflowX: 'auto',
-            paddingBottom: '16px',
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: '300',
+              margin: 0,
+              letterSpacing: '-0.5px',
+              color: isDark ? '#fff' : '#000',
             }}>
-              <thead>
-                <tr>
-                  <th style={{
-                    width: '10px',
-                    minWidth: '8px',
-                    padding: '12px 8px',
-                    textAlign: 'left',
-                    fontSize: '10px',
-                    fontWeight: '500',
-                    color: theme.textDim,
-                    letterSpacing: '1px',
-                    textTransform: 'uppercase',
-                    borderBottom: `1px solid ${theme.border}`,
-                    position: 'sticky',
-                    left: 0,
-                    backgroundColor: theme.bg,
-                    zIndex: 10,
-                  }}>
-                    Date
-                  </th>
-                  {trackers.map(tracker => {
-                    let cellWidth = '65px';
-                    if (tracker.tracker_type === 'text') {
-                      cellWidth = '140px';
-                    } else if (tracker.tracker_type === 'rating') {
-                      cellWidth = '85px';
-                    } else if (tracker.tracker_type === 'duration') {
-                      cellWidth = '75px';
-                    } else if (tracker.tracker_type === 'time') {
-                      cellWidth = '70px';
-                    } else if (tracker.tracker_type === 'prayer') {
-                      cellWidth = '150px';
-                    }
-                    
-                    return (
-                      <th
-                        key={tracker.id}
-                        style={{
-                          width: cellWidth,
-                          minWidth: cellWidth,
-                          padding: '12px 8px',
-                          textAlign: 'center',
-                          borderBottom: `1px solid ${theme.border}`,
-                          borderLeft: `1px solid ${theme.borderLight}`,
-                        }}
-                      >
-                        <div style={{
-                          fontSize: '11px',
-                          color: theme.text,
-                          fontWeight: '400',
+              {getMonthName(currentDate)}
+            </h1>
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            <button
+              onClick={() => setShowManagerModal(true)}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${theme.borderLight}`,
+                color: theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                letterSpacing: '1px',
+                marginRight: '8px',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              MANAGE
+            </button>
+            <button
+              onClick={() => setShowInsights(!showInsights)}
+              style={{
+                background: showInsights ? theme.accentBgStrong : 'transparent',
+                border: `1px solid ${showInsights ? theme.accent : theme.borderLight}`,
+                color: showInsights ? theme.accent : theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                letterSpacing: '1px',
+                marginRight: '8px',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              INSIGHTS
+            </button>
+            <button
+              onClick={toggle}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${theme.borderLight}`,
+                color: theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                marginRight: '8px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {isDark ? '☀' : '☾'}
+            </button>
+            <button
+              onClick={() => navigateMonth(-1)}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${theme.borderLight}`,
+                color: theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ←
+            </button>
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${theme.borderLight}`,
+                color: theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                letterSpacing: '1px',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              TODAY
+            </button>
+            <button
+              onClick={() => navigateMonth(1)}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${theme.borderLight}`,
+                color: theme.textDim,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              →
+            </button>
+            <div style={{ marginLeft: '8px' }}>
+              <UserMenu
+                theme={theme}
+                onLogout={logout}
+                onOpenPlaceholder={(title) => setPlaceholderModalTitle(title)}
+              />
+            </div>
+          </div>
+        </header>
+
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+          {/* Main Grid */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              overflow: 'auto',
+            }}>
+              <table style={{
+                width: '100%',
+                border: `1px solid ${theme.border}`,
+                borderCollapse: 'collapse',
+              }}>
+                <thead>
+                  <tr>
+                    <th style={{
+                      width: '10px',
+                      minWidth: '8px',
+                      padding: '8px 8px',
+                      textAlign: 'left',
+                      fontSize: '10px',
+                      fontWeight: '500',
+                      color: theme.textDim,
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      border: `1px solid ${theme.borderLight}`,
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: theme.bg,
+                      zIndex: 10,
+                    }}>
+                      Date
+                    </th>
+                    {trackers.map(tracker => {
+                      let cellWidth = '65px';
+                      if (tracker.tracker_type === 'text') {
+                        cellWidth = '140px';
+                      } else if (tracker.tracker_type === 'rating') {
+                        cellWidth = '85px';
+                      } else if (tracker.tracker_type === 'duration') {
+                        cellWidth = '75px';
+                      } else if (tracker.tracker_type === 'time') {
+                        cellWidth = '70px';
+                      } else if (tracker.tracker_type === 'prayer') {
+                        cellWidth = '150px';
+                      }
+                      
+                      return (
+                        <th
+                          key={tracker.id}
+                          style={{
+                            width: cellWidth,
+                            minWidth: cellWidth,
+                            padding: '8px 8px',
+                            textAlign: 'center',
+                            border: `1px solid ${theme.borderLight}`,
+                          }}
+                        >
+                          <div style={{
+                            fontSize: '11px',
+                            color: theme.text,
+                            fontWeight: '700',
                         }}>
                           {tracker.name}
                         </div>
-                        {tracker.unit && (
-                          <div style={{
-                            fontSize: '9px',
-                            color: theme.textDim,
-                            marginTop: '2px',
-                          }}>
-                            {tracker.unit}
-                          </div>
-                        )}
                       </th>
                     );
                   })}
-                  <th
+                    <th
                     style={{
                       width: '45px',
                       minWidth: '45px',
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       textAlign: 'center',
-                      borderBottom: `1px solid ${theme.border}`,
-                      borderLeft: `1px solid ${theme.border}`,
+                      border: `1px solid ${theme.borderLight}`,
                     }}
                   >
-                    <button
-                      onClick={() => setShowAddModal(true)}
+                      <button
+                        onClick={() => setShowAddModal(true)}
+                        style={{
+                          background: 'transparent',
+                          border: `1px dashed ${theme.textDimmest}`,
+                          color: theme.textDimmer,
+                          padding: '4px 8px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        +
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {days.map(day => (
+                    <tr
+                      key={day}
                       style={{
-                        background: 'transparent',
-                        border: `1px dashed ${theme.textDimmest}`,
-                        color: theme.textDimmer,
-                        padding: '4px 8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        transition: 'all 0.15s ease',
+                        backgroundColor: isToday(day) 
+                          ? theme.accentBg
+                          : 'transparent',
                       }}
                     >
-                      +
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {days.map(day => (
-                  <tr
-                    key={day}
-                    style={{
-                      backgroundColor: isToday(day) 
-                        ? theme.accentBg
-                        : 'transparent',
-                    }}
-                  >
                     <td style={{
-                      padding: '0 4px',
+                      paddingLeft: '10px',
+                      paddingRight: '2px',
                       height: '38px',
-                      borderBottom: `1px solid ${theme.borderLight}`,
+                      border: `1px solid ${theme.borderLight}`,
                       position: 'sticky',
                       left: 0,
                       backgroundColor: isToday(day) ? theme.bgAlt : theme.bg,
-                      zIndex: 5,
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px',
+                        zIndex: 5,
                       }}>
-                        <span style={{
-                          fontSize: '12px',
-                          color: isToday(day) ? theme.accent : (isWeekend(day) ? theme.weekendText : theme.textMuted),
-                          fontWeight: isToday(day) ? '600' : '400',
-                          width: '16px',
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px',
                         }}>
-                          {day}
-                        </span>
-                        <span style={{
-                          fontSize: '9px',
-                          color: isWeekend(day) ? theme.weekendDayName : theme.textDimmer,
-                          width: '24px',
-                        }}>
-                          {getDayName(day)}
-                        </span>
-                      </div>
-                    </td>
-                    {trackers.map(tracker => {
-                      const cellKey = getCellKey(tracker.id, day);
-                      const value = getCellValue(tracker.id, day);
-                      const isSelected = selectedCell === cellKey;
-                      
-                      return (
-                        <td
-                          key={tracker.id}
-                          style={{
-                            padding: '0',
-                            borderBottom: `1px solid ${theme.borderLight}`,
-                            borderLeft: `1px solid ${theme.borderLight}`,
-                          }}
-                        >
-                          <TrackerCell
-                            tracker={tracker}
-                            day={day}
-                            value={value}
-                            isSelected={isSelected}
-                            onValueChange={(newValue) => updateCellValue(tracker.id, day, newValue)}
-                            onFocus={() => setSelectedCell(cellKey)}
-                            onBlur={() => setSelectedCell(null)}
-                            theme={theme}
-                            isDark={isDark}
-                          />
-                        </td>
-                      );
-                    })}
-                    <td style={{
-                      borderBottom: `1px solid ${theme.borderLight}`,
-                      borderLeft: `1px solid ${theme.border}`,
-                    }} />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          <span style={{
+                            fontSize: '12px',
+                            color: isToday(day) ? theme.accent : (isWeekend(day) ? theme.weekendText : theme.textMuted),
+                            fontWeight: isToday(day) ? '600' : '400',
+                            width: '16px',
+                          }}>
+                            {day}
+                          </span>
+                          <span style={{
+                            fontSize: '9px',
+                            color: isWeekend(day) ? theme.weekendDayName : theme.textDimmer,
+                            width: '24px',
+                          }}>
+                            {getDayName(day)}
+                          </span>
+                        </div>
+                      </td>
+                      {trackers.map(tracker => {
+                        const cellKey = getCellKey(tracker.id, day);
+                        const value = getCellValue(tracker.id, day);
+                        const isSelected = selectedCell === cellKey;
+                        
+                        return (
+                          <td
+                            key={tracker.id}
+                            style={{
+                              padding: '0',
+                              border: `1px solid ${theme.borderLight}`,
+                            }}
+                          >
+                            <TrackerCell
+                              tracker={tracker}
+                              day={day}
+                              value={value}
+                              isSelected={isSelected}
+                              onValueChange={(newValue) => updateCellValue(tracker.id, day, newValue)}
+                              onFocus={() => setSelectedCell(cellKey)}
+                              onBlur={() => setSelectedCell(null)}
+                              theme={theme}
+                              isDark={isDark}
+                            />
+                          </td>
+                        );
+                      })}
+                      <td style={{
+                        border: `1px solid ${theme.borderLight}`,
+                      }} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        {/* AI Insights Panel */}
-        {showInsights && (
-          <InsightPanel
-            theme={theme}
-            monthData={monthData}
-            trackers={trackers}
-            currentDate={currentDate}
-          />
-        )}
+          {/* AI Insights */}
+          {showInsights && (
+            <InsightPanel
+              theme={theme}
+              monthData={monthData}
+              trackers={trackers}
+              currentDate={currentDate}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
