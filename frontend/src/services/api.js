@@ -4,6 +4,10 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   'https://tracked-app-production.up.railway.app/api/v1';
 
+const notifyAuthChanged = () => {
+  window.dispatchEvent(new Event('auth:tokens'));
+};
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -56,7 +60,8 @@ api.interceptors.response.use(
         // Refresh failed, logout user
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        notifyAuthChanged();
+        window.location.hash = '#/login';
         return Promise.reject(refreshError);
       }
     }
@@ -75,6 +80,7 @@ export const authAPI = {
     const { access, refresh } = response.data;
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
+    notifyAuthChanged();
     return response.data;
   },
 
@@ -87,6 +93,7 @@ export const authAPI = {
     const { access, refresh } = response.data;
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
+    notifyAuthChanged();
     return response.data;
   },
 
@@ -94,6 +101,7 @@ export const authAPI = {
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    notifyAuthChanged();
   },
 
   isAuthenticated: () => {

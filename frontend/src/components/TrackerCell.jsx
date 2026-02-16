@@ -211,6 +211,7 @@ const TrackerCell = ({
   if (tracker.tracker_type === 'number') {
     return (
       <input
+        className="cell-input"
         type="number"
         step="0.1"
         value={localValue || ''}
@@ -465,6 +466,7 @@ const TrackerCell = ({
   // Text (default)
   return (
     <input
+      className="cell-input"
       type="text"
       value={localValue || ''}
       onChange={(e) => setLocalValue(e.target.value)}

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-const PlaceholderModal = ({ isOpen, onClose, title, description, theme }) => {
+const PlaceholderModal = ({ isOpen, onClose, title, description, theme, kicker = 'Coming soon' }) => {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -63,7 +63,7 @@ const PlaceholderModal = ({ isOpen, onClose, title, description, theme }) => {
               color: theme?.textDim || '#777',
               marginBottom: '6px',
             }}>
-              Coming soon
+              {kicker}
             </div>
             <h2 style={{
               margin: 0,
@@ -108,4 +108,3 @@ const PlaceholderModal = ({ isOpen, onClose, title, description, theme }) => {
 };
 
 export default PlaceholderModal;
-

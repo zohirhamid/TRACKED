@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { trackerAPI, entryAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../theme/ThemeContext';
+import { useHotkeys } from '../hooks/useHotkeys';
 import AddTrackerModal from './AddTrackerModal';
 import PlaceholderModal from './PlaceholderModal';
 import TrackerCell from './TrackerCell';
@@ -10,11 +12,12 @@ import UserMenu from './UserMenu';
 
 const LifeTracker = () => {
   const { logout } = useAuth();
+  const { isDark, theme, toggle } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCell, setSelectedCell] = useState(null);
-  const [isDark, setIsDark] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
   const [placeholderModalTitle, setPlaceholderModalTitle] = useState(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   
   // Data from backend
   const [trackers, setTrackers] = useState([]);
@@ -194,45 +197,15 @@ const LifeTracker = () => {
   const daysInMonth = getDaysInMonth(currentDate);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  const theme = isDark ? {
-    bg: '#1a1a1a',
-    bgAlt: '#222222',
-    bgCard: '#252525',
-    text: '#e0e0e0',
-    textMuted: '#999',
-    textDim: '#666',
-    textDimmer: '#444',
-    textDimmest: '#333',
-    border: '#2a2a2a',
-    borderLight: '#242424',
-    accent: '#eab308',
-    accentBg: 'rgba(234, 179, 8, 0.06)',
-    accentBgStrong: 'rgba(234, 179, 8, 0.1)',
-    weekendText: '#444',
-    weekendDayName: '#383838',
-    hoverBorder: '#555',
-    hoverText: '#fff',
-    inputPlaceholder: '#333',
-  } : {
-    bg: '#fafafa',
-    bgAlt: '#f5f5f0',
-    bgCard: '#f0f0f0',
-    text: '#2a2a2a',
-    textMuted: '#666',
-    textDim: '#888',
-    textDimmer: '#aaa',
-    textDimmest: '#ccc',
-    border: '#d0d0d0',
-    borderLight: '#e0e0e0',
-    accent: '#ca8a04',
-    accentBg: 'rgba(202, 138, 4, 0.08)',
-    accentBgStrong: 'rgba(202, 138, 4, 0.15)',
-    weekendText: '#aaa',
-    weekendDayName: '#bbb',
-    hoverBorder: '#999',
-    hoverText: '#000',
-    inputPlaceholder: '#d5d5d5',
-  };
+  useHotkeys({
+    t: () => toggle(),
+    i: () => setShowInsights(v => !v),
+    a: () => setShowAddModal(true),
+    m: () => setShowManagerModal(true),
+    g: () => setCurrentDate(new Date()),
+    'shift+?': () => setShowShortcuts(true),
+    escape: () => setShowShortcuts(false),
+  });
 
   if (isLoading && !monthData) {
     return (
@@ -260,49 +233,6 @@ const LifeTracker = () => {
       boxSizing: 'border-box',
       transition: 'background-color 0.2s ease, color 0.2s ease',
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-        
-        * {
-          box-sizing: border-box;
-        }
-        
-        ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: ${isDark ? '#141414' : '#f5f5f5'};
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: ${isDark ? '#333' : '#ccc'};
-          border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: ${isDark ? '#444' : '#aaa'};
-        }
-        
-        input:focus {
-          outline: none;
-        }
-        
-        .cell-input::placeholder {
-          color: ${theme.inputPlaceholder};
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 1; }
-        }
-        
-        .loading-dot {
-          animation: pulse 1.5s ease-in-out infinite;
-        }
-      `}</style>
-
       <AddTrackerModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -323,6 +253,25 @@ const LifeTracker = () => {
         onClose={() => setPlaceholderModalTitle(null)}
         title={placeholderModalTitle || ''}
         description="working on it 🛠️"
+        theme={theme}
+      />
+
+      <PlaceholderModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+        title="Keyboard shortcuts"
+        kicker="Keyboard"
+        description={(
+          <div style={{ display: 'grid', gap: '10px' }}>
+            <div><span style={{ color: theme.textDim }}>T</span> — toggle theme</div>
+            <div><span style={{ color: theme.textDim }}>I</span> — toggle insights</div>
+            <div><span style={{ color: theme.textDim }}>A</span> — add tracker</div>
+            <div><span style={{ color: theme.textDim }}>M</span> — manage trackers</div>
+            <div><span style={{ color: theme.textDim }}>G</span> — jump to today</div>
+            <div><span style={{ color: theme.textDim }}>Shift + ?</span> — open this panel</div>
+            <div><span style={{ color: theme.textDim }}>Esc</span> — close</div>
+          </div>
+        )}
         theme={theme}
       />
 
@@ -411,7 +360,7 @@ const LifeTracker = () => {
                 INSIGHTS
               </button>
               <button
-                onClick={() => setIsDark(!isDark)}
+                onClick={toggle}
                 style={{
                   background: 'transparent',
                   border: `1px solid ${theme.borderLight}`,

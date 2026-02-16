@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { navigate } from '../app/router.jsx';
+import { useTheme } from '../theme/ThemeContext';
 
 const DEMO_USERNAME = 'demo';
 const DEMO_PASSWORD = 'london2024';
 
-const Login = ({ onBack }) => {
+const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -13,6 +15,7 @@ const Login = ({ onBack }) => {
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { login, signup } = useAuth();
+  const { theme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,16 +49,6 @@ const Login = ({ onBack }) => {
     setError('');
   };
 
-  const theme = {
-    bg: '#0a0a0a',
-    bgCard: '#111',
-    text: '#e5e5e5',
-    textMuted: '#888',
-    border: '#1a1a1a',
-    accent: '#eab308',
-    accentBg: 'rgba(234, 179, 8, 0.06)',
-  };
-
   const anyLoading = isLoading || isDemoLoading;
 
   return (
@@ -68,10 +61,6 @@ const Login = ({ onBack }) => {
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-      `}</style>
-
       <div style={{
         width: '100%',
         maxWidth: '400px',
@@ -81,23 +70,21 @@ const Login = ({ onBack }) => {
           textAlign: 'center',
           marginBottom: '40px',
         }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: theme.textMuted,
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                marginBottom: '24px',
-                display: 'block',
-              }}
-            >
-              ← Back
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: theme.textMuted,
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              marginBottom: '24px',
+              display: 'block',
+            }}
+          >
+            ← Back
+          </button>
           <div style={{
             fontSize: '10px',
             letterSpacing: '3px',
@@ -108,18 +95,18 @@ const Login = ({ onBack }) => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
+        }}>
+          Life Tracker
+          <span style={{
+            background: theme.accentBg,
+            color: theme.accent,
+            padding: '2px 6px',
+            fontSize: '8px',
+            letterSpacing: '1px',
           }}>
-            Life Tracker
-            <span style={{
-              background: theme.accentBg,
-              color: theme.accent,
-              padding: '2px 6px',
-              fontSize: '8px',
-              letterSpacing: '1px',
-            }}>
-              AI
-            </span>
-          </div>
+            AI
+          </span>
+        </div>
           <h1 style={{
             fontSize: '28px',
             fontWeight: '300',

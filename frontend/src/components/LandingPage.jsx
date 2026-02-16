@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { coreAPI } from '../services/api';
+import { navigate } from '../app/router.jsx';
+import { useTheme } from '../theme/ThemeContext';
 
 const DEMO_USERNAME = 'demo';
 const DEMO_PASSWORD = 'london2024';
-const LandingPage = ({ onSignIn }) => {
+const LandingPage = () => {
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [userCount, setUserCount] = useState(null);
   const { login } = useAuth();
+  const { theme } = useTheme();
 
   const handleDemo = async () => {
     setIsDemoLoading(true);
@@ -39,18 +42,6 @@ const LandingPage = ({ onSignIn }) => {
     };
   }, []);
 
-  const theme = {
-    bg: '#0a0a0a',
-    bgCard: '#111',
-    text: '#e5e5e5',
-    textMuted: '#888',
-    textDim: '#555',
-    border: '#1a1a1a',
-    accent: '#eab308',
-    accentBg: 'rgba(234, 179, 8, 0.06)',
-    accentBorder: 'rgba(234, 179, 8, 0.2)',
-  };
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -58,39 +49,6 @@ const LandingPage = ({ onSignIn }) => {
       color: theme.text,
       fontFamily: '"JetBrains Mono", "SF Mono", "Fira Code", monospace',
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-
-        * { box-sizing: border-box; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-up { animation: fadeUp 0.6s ease-out forwards; opacity: 0; }
-        .fade-up-1 { animation-delay: 0.1s; }
-        .fade-up-2 { animation-delay: 0.25s; }
-        .fade-up-3 { animation-delay: 0.4s; }
-        .fade-up-4 { animation-delay: 0.55s; }
-
-        .feature-card {
-          transition: border-color 0.2s ease, background-color 0.2s ease;
-        }
-        .feature-card:hover {
-          border-color: rgba(234, 179, 8, 0.2) !important;
-          background-color: rgba(234, 179, 8, 0.06) !important;
-        }
-
-        .cta-btn {
-          transition: all 0.15s ease;
-        }
-        .cta-btn:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
-        }
-      `}</style>
-
       {/* ── Navigation ── */}
       <nav style={{
         display: 'flex',
@@ -140,7 +98,7 @@ const LandingPage = ({ onSignIn }) => {
             {isDemoLoading ? '...' : 'Try Demo'}
           </button>
           <button
-            onClick={onSignIn}
+            onClick={() => navigate('/login')}
             className="cta-btn"
             style={{
               background: theme.accent,
@@ -257,7 +215,7 @@ const LandingPage = ({ onSignIn }) => {
             {isDemoLoading ? 'Loading...' : 'Try Demo →'}
           </button>
           <button
-            onClick={onSignIn}
+            onClick={() => navigate('/login')}
             className="cta-btn"
             style={{
               background: 'transparent',

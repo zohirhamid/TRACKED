@@ -8,14 +8,24 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated on mount
-    const checkAuth = () => {
-      const isAuth = authAPI.isAuthenticated();
-      setIsAuthenticated(isAuth);
-      setIsLoading(false);
+    const syncAuth = () => {
+      setIsAuthenticated(authAPI.isAuthenticated());
     };
 
-    checkAuth();
+    syncAuth();
+    setIsLoading(false);
+
+    const onTokens = () => syncAuth();
+    const onStorage = (e) => {
+      if (e.key === 'access_token' || e.key === 'refresh_token') syncAuth();
+    };
+
+    window.addEventListener('auth:tokens', onTokens);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('auth:tokens', onTokens);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const login = async (username, password) => {
