@@ -51,7 +51,7 @@ const TrackerCell = ({
       <div
         style={{
           width: '100%',
-          height: '38px',
+          height: '32px',
           background: isSelected ? theme.accentBgStrong : 'transparent',
           borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
@@ -78,11 +78,11 @@ const TrackerCell = ({
         tabIndex={0}
       >
         {localValue === 'true' || localValue === true ? (
-          <span style={{ color: '#22c55e', fontSize: '18px', fontWeight: 'bold' }}>✓</span>
+          <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: 'bold' }}>✓</span>
         ) : localValue === 'false' || localValue === false ? (
-          <span style={{ color: '#ef4444', fontSize: '18px', fontWeight: 'bold' }}>✗</span>
+          <span style={{ color: '#ef4444', fontSize: '16px', fontWeight: 'bold' }}>✗</span>
         ) : (
-          <span style={{ color: theme.textDimmest, fontSize: '12px' }}>·</span>
+          <span style={{ color: theme.textDimmest, fontSize: '9px' }}>·</span>
         )}
       </div>
     );
@@ -110,10 +110,10 @@ const TrackerCell = ({
 
     const renderStateIcon = (state) => {
       if (state === true) {
-        return <span style={{ color: '#22c55e', fontSize: '12px', fontWeight: 'bold' }}>✓</span>;
+        return <span style={{ color: '#22c55e', fontSize: '10px', fontWeight: 'bold' }}>✓</span>;
       }
       if (state === false) {
-        return <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 'bold' }}>✗</span>;
+        return <span style={{ color: '#ef4444', fontSize: '10px', fontWeight: 'bold' }}>✗</span>;
       }
       return <span style={{ color: theme.textDimmest, fontSize: '10px' }}>·</span>;
     };
@@ -122,7 +122,7 @@ const TrackerCell = ({
       <div
         style={{
           width: '100%',
-          height: '38px',
+          height: '32px',
           background: isSelected ? theme.accentBgStrong : 'transparent',
           borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
@@ -171,11 +171,28 @@ const TrackerCell = ({
 
   // Rating (1-5 stars)
   if (tracker.tracker_type === 'rating') {
+    const current = localValue ? parseInt(localValue, 10) : 0;
+    const setRating = (next) => {
+      if (!next || next < 1) {
+        handleChange('');
+        return;
+      }
+      if (next > 5) {
+        handleChange('5');
+        return;
+      }
+      if (next === current) {
+        handleChange('');
+        return;
+      }
+      handleChange(String(next));
+    };
+
     return (
       <div
         style={{
           width: '100%',
-          height: '38px',
+          height: '32px',
           background: isSelected ? theme.accentBgStrong : 'transparent',
           borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
@@ -187,21 +204,52 @@ const TrackerCell = ({
         }}
         onFocus={onFocus}
         onBlur={onBlur}
+        onKeyDown={(e) => {
+          if (e.key >= '1' && e.key <= '5') {
+            e.preventDefault();
+            setRating(parseInt(e.key, 10));
+            return;
+          }
+          if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+            e.preventDefault();
+            setRating(0);
+            return;
+          }
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            setRating(Math.max(0, current - 1));
+            return;
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            setRating(Math.min(5, current + 1));
+          }
+        }}
         tabIndex={0}
       >
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            onClick={() => handleChange(star.toString())}
-            style={{
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: parseInt(localValue) >= star ? theme.accent : theme.textDimmest,
-              transition: 'color 0.1s ease',
+        {current === 0 ? (
+          <span style={{ color: theme.textDimmest, fontSize: '9px' }}>·</span>
+        ) : null}
+        {[1, 2, 3, 4, 5].map((step) => (
+          <button
+            key={step}
+            type="button"
+            onClick={() => {
+              onFocus();
+              setRating(step);
             }}
-          >
-            ★
-          </span>
+            style={{
+              width: '10px',
+              height: '10px',
+              padding: 0,
+              border: `1px solid ${theme.borderLight}`,
+              background: step <= current ? theme.accent : 'transparent',
+              cursor: 'pointer',
+              opacity: current === 0 ? 0.6 : 1,
+              transition: 'all 0.1s ease',
+            }}
+            aria-label={`Set rating ${step}`}
+          />
         ))}
       </div>
     );
@@ -223,14 +271,14 @@ const TrackerCell = ({
         onFocus={onFocus}
         style={{
           width: '100%',
-          height: '38px',
+          height: '32px',
           background: isSelected ? theme.accentBgStrong : 'transparent',
           border: 'none',
           borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
           textAlign: 'center',
-          fontSize: '11px',
+          fontSize: '9px',
           fontFamily: 'inherit',
           padding: '0 8px',
           transition: 'all 0.1s ease',
@@ -284,7 +332,7 @@ const TrackerCell = ({
           tabIndex={0}
           style={{
             width: '100%',
-            height: '38px',
+            height: '32px',
             background: isSelected ? theme.accentBgStrong : 'transparent',
             borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
             borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
@@ -292,7 +340,7 @@ const TrackerCell = ({
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '11px',
+            fontSize: '9px',
             color: totalMinutes > 0 ? (isDark ? '#fff' : '#000') : theme.textDimmest,
             transition: 'all 0.1s ease',
           }}
@@ -419,7 +467,7 @@ const TrackerCell = ({
         onClick={() => inputRef.current?.showPicker?.()}
         style={{
           width: '100%',
-          height: '38px',
+          height: '32px',
           background: isSelected ? theme.accentBgStrong : 'transparent',
           borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
           borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
@@ -453,7 +501,7 @@ const TrackerCell = ({
           }}
         />
         <span style={{
-          fontSize: '11px',
+          fontSize: '9px',
           color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
           pointerEvents: 'none',
         }}>
@@ -477,14 +525,14 @@ const TrackerCell = ({
       onFocus={onFocus}
       style={{
         width: '100%',
-        height: '38px',
+        height: '32px',
         background: isSelected ? theme.accentBgStrong : 'transparent',
         border: 'none',
         borderTop: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
         borderBottom: `1px solid ${isSelected ? theme.accent : 'transparent'}`,
         color: localValue ? (isDark ? '#fff' : '#000') : theme.textDimmest,
         textAlign: 'center',
-        fontSize: '11px',
+        fontSize: '9px',
         fontFamily: 'inherit',
         padding: '0 8px',
         transition: 'all  0.1s ease',

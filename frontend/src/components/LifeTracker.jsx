@@ -194,8 +194,168 @@ const LifeTracker = () => {
 
   const getCellKey = (trackerId, day) => `${trackerId}-${day}`;
 
-  const daysInMonth = getDaysInMonth(currentDate);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const getCellValueFromEntry = (tracker, entry) => {
+    if (!entry) return '';
+    switch (tracker.tracker_type) {
+      case 'binary':
+        return entry.binary_value !== undefined ? entry.binary_value.toString() : '';
+      case 'number':
+        return entry.number_value !== null && entry.number_value !== undefined ? entry.number_value.toString() : '';
+      case 'rating':
+        return entry.rating_value !== null && entry.rating_value !== undefined ? entry.rating_value.toString() : '';
+      case 'duration':
+        return entry.duration_minutes !== null && entry.duration_minutes !== undefined ? entry.duration_minutes.toString() : '';
+      case 'time':
+        return entry.time_value || '';
+      case 'text':
+        return entry.text_value || '';
+      case 'prayer':
+        return entry.prayer_values || null;
+      default:
+        return '';
+    }
+  };
+
+  const hasEntryData = (entry, trackerType) => {
+    if (!entry) return false;
+    switch (trackerType) {
+      case 'binary':
+        return entry.binary_value !== null && entry.binary_value !== undefined;
+      case 'number':
+        return entry.number_value !== null && entry.number_value !== undefined;
+      case 'rating':
+        return entry.rating_value !== null && entry.rating_value !== undefined;
+      case 'duration':
+        return entry.duration_minutes !== null && entry.duration_minutes !== undefined;
+      case 'time':
+        return entry.time_value !== null && entry.time_value !== undefined && String(entry.time_value).trim() !== '';
+      case 'text':
+        return entry.text_value !== null && entry.text_value !== undefined && String(entry.text_value).trim() !== '';
+      case 'prayer': {
+        const val = entry.prayer_values;
+        if (!val) return false;
+        if (typeof val === 'object' && !Array.isArray(val)) {
+          return Object.values(val).some(v => v !== null && v !== undefined && v !== '');
+        }
+        if (typeof val === 'string') {
+          try {
+            const parsed = JSON.parse(val);
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+            return Object.values(parsed).some(v => v !== null && v !== undefined && v !== '');
+          } catch (e) {
+            return false;
+          }
+        }
+        return false;
+      }
+      default:
+        return false;
+    }
+  };
+
+  const formatAvg = (value) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return '—';
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? `${rounded}` : `${rounded.toFixed(1)}`;
+  };
+
+  const formatDurationMinutes = (totalMinutes) => {
+    const minutes = parseInt(totalMinutes, 10) || 0;
+    if (minutes <= 0) return '—';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${mins}m`;
+  };
+
+  const normalizePrayerValues = (val) => {
+    if (!val) return null;
+    if (typeof val === 'object' && !Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const computePeriodStat = (tracker, periodDays) => {
+    const days = Array.isArray(periodDays) ? periodDays : [];
+    const totalDays = days.length;
+    if (totalDays === 0) return '—';
+
+    if (tracker.tracker_type === 'binary') {
+      let countTrue = 0;
+      for (const dayData of days) {
+        const entry = dayData?.entries?.[tracker.id];
+        if (entry?.binary_value === true) countTrue += 1;
+      }
+      return `${countTrue}/${totalDays}`;
+    }
+
+    if (tracker.tracker_type === 'duration') {
+      let totalMinutes = 0;
+      for (const dayData of days) {
+        const entry = dayData?.entries?.[tracker.id];
+        if (entry?.duration_minutes !== null && entry?.duration_minutes !== undefined) {
+          totalMinutes += parseInt(entry.duration_minutes, 10) || 0;
+        }
+      }
+      return formatDurationMinutes(totalMinutes);
+    }
+
+    if (tracker.tracker_type === 'number') {
+      let sum = 0;
+      let count = 0;
+      for (const dayData of days) {
+        const entry = dayData?.entries?.[tracker.id];
+        if (entry?.number_value !== null && entry?.number_value !== undefined) {
+          sum += parseFloat(entry.number_value);
+          count += 1;
+        }
+      }
+      if (count === 0) return '—';
+      return `${formatAvg(sum / count)}`;
+    }
+
+    if (tracker.tracker_type === 'rating') {
+      let sum = 0;
+      let count = 0;
+      for (const dayData of days) {
+        const entry = dayData?.entries?.[tracker.id];
+        if (entry?.rating_value !== null && entry?.rating_value !== undefined) {
+          sum += parseInt(entry.rating_value, 10);
+          count += 1;
+        }
+      }
+      if (count === 0) return '—';
+      return `${formatAvg(sum / count)}`;
+    }
+
+    if (tracker.tracker_type === 'prayer') {
+      let done = 0;
+      for (const dayData of days) {
+        const entry = dayData?.entries?.[tracker.id];
+        const values = normalizePrayerValues(entry?.prayer_values);
+        if (!values) continue;
+        done += Object.values(values).filter(v => v === true).length;
+      }
+      const possible = totalDays * 5;
+      return `${done}/${possible}`;
+    }
+
+    // time/text/other: coverage
+    let filled = 0;
+    for (const dayData of days) {
+      const entry = dayData?.entries?.[tracker.id];
+      if (hasEntryData(entry, tracker.tracker_type)) filled += 1;
+    }
+    return `${filled}/${totalDays}`;
+  };
 
   useHotkeys({
     t: () => toggle(),
@@ -522,79 +682,160 @@ const LifeTracker = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {days.map(day => (
-                    <tr
-                      key={day}
-                      style={{
-                        backgroundColor: isToday(day) 
-                          ? theme.accentBg
-                          : 'transparent',
-                      }}
-                    >
-                    <td style={{
-                      paddingLeft: '10px',
-                      paddingRight: '2px',
-                      height: '38px',
-                      border: `1px solid ${theme.borderLight}`,
-                      position: 'sticky',
-                      left: 0,
-                      backgroundColor: isToday(day) ? theme.bgAlt : theme.bg,
-                        zIndex: 5,
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                        }}>
-                          <span style={{
-                            fontSize: '12px',
-                            color: isToday(day) ? theme.accent : (isWeekend(day) ? theme.weekendText : theme.textMuted),
-                            fontWeight: isToday(day) ? '600' : '400',
-                            width: '16px',
-                          }}>
-                            {day}
-                          </span>
-                          <span style={{
-                            fontSize: '9px',
-                            color: isWeekend(day) ? theme.weekendDayName : theme.textDimmer,
-                            width: '24px',
-                          }}>
-                            {getDayName(day)}
-                          </span>
-                        </div>
-                      </td>
-                      {trackers.map(tracker => {
-                        const cellKey = getCellKey(tracker.id, day);
-                        const value = getCellValue(tracker.id, day);
-                        const isSelected = selectedCell === cellKey;
-                        
+                  {(() => {
+                    const weeks = monthData?.weeks || [];
+                    const rows = [];
+                    for (let weekIndex = 0; weekIndex < weeks.length; weekIndex += 1) {
+                      const week = weeks[weekIndex] || [];
+                      for (const dayData of week) {
+                        rows.push({ type: 'day', dayData });
+                      }
+                      rows.push({ type: 'weekStats', weekIndex, days: week });
+                    }
+                    rows.push({ type: 'monthStats', days: weeks.flat() });
+
+                    return rows.map((row) => {
+                      if (row.type === 'day') {
+                        const day = row.dayData.day;
                         return (
-                          <td
-                            key={tracker.id}
+                          <tr
+                            key={`day-${row.dayData.date}`}
                             style={{
-                              padding: '0',
-                              border: `1px solid ${theme.borderLight}`,
+                              backgroundColor: isToday(day)
+                                ? theme.accentBg
+                                : 'transparent',
                             }}
                           >
-                            <TrackerCell
-                              tracker={tracker}
-                              day={day}
-                              value={value}
-                              isSelected={isSelected}
-                              onValueChange={(newValue) => updateCellValue(tracker.id, day, newValue)}
-                              onFocus={() => setSelectedCell(cellKey)}
-                              onBlur={() => setSelectedCell(null)}
-                              theme={theme}
-                              isDark={isDark}
-                            />
-                          </td>
+                            <td style={{
+                              paddingLeft: '10px',
+                              paddingRight: '2px',
+                              height: '32px',
+                              border: `1px solid ${theme.borderLight}`,
+                              position: 'sticky',
+                              left: 0,
+                              backgroundColor: isToday(day) ? theme.bgAlt : theme.bg,
+                              zIndex: 5,
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                              }}>
+                                <span style={{
+                                  fontSize: '9px',
+                                  color: isToday(day) ? theme.accent : (isWeekend(day) ? theme.weekendText : theme.textMuted),
+                                  fontWeight: isToday(day) ? '600' : '400',
+                                  width: '16px',
+                                }}>
+                                  {day}
+                                </span>
+                                <span style={{
+                                  fontSize: '9px',
+                                  color: isWeekend(day) ? theme.weekendDayName : theme.textDimmer,
+                                  width: '24px',
+                                }}>
+                                  {getDayName(day)}
+                                </span>
+                              </div>
+                            </td>
+                            {trackers.map(tracker => {
+                              const cellKey = getCellKey(tracker.id, day);
+                              const entry = row.dayData?.entries?.[tracker.id];
+                              const value = getCellValueFromEntry(tracker, entry);
+                              const isSelected = selectedCell === cellKey;
+                              
+                              return (
+                                <td
+                                  key={tracker.id}
+                                  style={{
+                                    padding: '0',
+                                    border: `1px solid ${theme.borderLight}`,
+                                  }}
+                                >
+                                  <TrackerCell
+                                    tracker={tracker}
+                                    day={day}
+                                    value={value}
+                                    isSelected={isSelected}
+                                    onValueChange={(newValue) => updateCellValue(tracker.id, day, newValue)}
+                                    onFocus={() => setSelectedCell(cellKey)}
+                                    onBlur={() => setSelectedCell(null)}
+                                    theme={theme}
+                                    isDark={isDark}
+                                  />
+                                </td>
+                              );
+                            })}
+                            <td style={{
+                              border: `1px solid ${theme.borderLight}`,
+                            }} />
+                          </tr>
                         );
-                      })}
-                      <td style={{
-                        border: `1px solid ${theme.borderLight}`,
-                      }} />
-                    </tr>
-                  ))}
+                      }
+
+                      const isMonth = row.type === 'monthStats';
+                      const label = isMonth ? 'MONTH' : `WEEK ${row.weekIndex + 1}`;
+                      const statTopBorder = `2px solid ${theme.border}`;
+                      const weekDividerBorder = `1px solid ${theme.border}`;
+                      const statsRowHeight = '30px';
+                      return (
+                        <tr
+                          key={isMonth ? 'month-stats' : `week-${row.weekIndex}`}
+                          style={{}}
+                        >
+                          <td style={{
+                            paddingLeft: '10px',
+                            paddingRight: '2px',
+                            height: statsRowHeight,
+                            border: `1px solid ${theme.borderLight}`,
+                            borderTop: isMonth ? statTopBorder : undefined,
+                            borderBottom: !isMonth ? weekDividerBorder : undefined,
+                            position: 'sticky',
+                            left: 0,
+                            backgroundColor: theme.bg,
+                            zIndex: 5,
+                          }}>
+                            <div style={{
+                              fontSize: '9px',
+                              color: theme.textDimmer,
+                              letterSpacing: '1.5px',
+                              textTransform: 'uppercase',
+                              fontWeight: '700',
+                            }}>
+                              {label}
+                            </div>
+                          </td>
+                          {trackers.map((tracker) => (
+                            <td
+                              key={tracker.id}
+                              style={{
+                                border: `1px solid ${theme.borderLight}`,
+                                borderTop: isMonth ? statTopBorder : undefined,
+                                borderBottom: !isMonth ? weekDividerBorder : undefined,
+                                padding: '0 6px',
+                                textAlign: 'center',
+                                height: statsRowHeight,
+                              }}
+                            >
+                              <div style={{
+                                fontSize: '9px',
+                                color: theme.textDim,
+                                fontWeight: '400',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {computePeriodStat(tracker, row.days)}
+                              </div>
+                            </td>
+                          ))}
+                          <td style={{
+                            border: `1px solid ${theme.borderLight}`,
+                            borderTop: isMonth ? statTopBorder : undefined,
+                            borderBottom: !isMonth ? weekDividerBorder : undefined,
+                          }} />
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
