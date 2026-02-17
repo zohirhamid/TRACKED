@@ -15,7 +15,7 @@ const LifeTracker = () => {
   const { isDark, theme, toggle } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCell, setSelectedCell] = useState(null);
-  const [showInsights, setShowInsights] = useState(true);
+  const [showInsights, setShowInsights] = useState(false);
   const [placeholderModalTitle, setPlaceholderModalTitle] = useState(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   
@@ -614,9 +614,10 @@ const LifeTracker = () => {
                       textTransform: 'uppercase',
                       border: `1px solid ${theme.borderLight}`,
                       position: 'sticky',
+                      top: 0,
                       left: 0,
                       backgroundColor: theme.bg,
-                      zIndex: 10,
+                      zIndex: 30,
                     }}>
                       Date
                     </th>
@@ -643,6 +644,10 @@ const LifeTracker = () => {
                             padding: '8px 8px',
                             textAlign: 'center',
                             border: `1px solid ${theme.borderLight}`,
+                            position: 'sticky',
+                            top: 0,
+                            backgroundColor: theme.bg,
+                            zIndex: 20,
                           }}
                         >
                           <div style={{
@@ -662,6 +667,10 @@ const LifeTracker = () => {
                       padding: '8px 4px',
                       textAlign: 'center',
                       border: `1px solid ${theme.borderLight}`,
+                      position: 'sticky',
+                      top: 0,
+                      backgroundColor: theme.bg,
+                      zIndex: 20,
                     }}
                   >
                       <button
