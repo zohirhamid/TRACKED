@@ -226,7 +226,7 @@ const Login = () => {
               width: '100%',
               background: theme.accent,
               border: 'none',
-              color: '#000',
+              color: theme.accentText,
               padding: '14px',
               fontSize: '10px',
               letterSpacing: '2px',

@@ -103,7 +103,7 @@ const LandingPage = () => {
             style={{
               background: theme.accent,
               border: 'none',
-              color: '#000',
+              color: theme.accentText,
               padding: '8px 16px',
               fontSize: '9px',
               letterSpacing: '1px',
@@ -201,7 +201,7 @@ const LandingPage = () => {
             style={{
               background: theme.accent,
               border: 'none',
-              color: '#000',
+              color: theme.accentText,
               padding: '14px 32px',
               fontSize: '10px',
               letterSpacing: '2px',

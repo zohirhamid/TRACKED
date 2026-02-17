@@ -434,7 +434,7 @@ const TrackerCell = ({
               style={{
                 background: theme.accent,
                 border: 'none',
-                color: '#000',
+                color: theme.accentText,
                 padding: '6px',
                 fontSize: '9px',
                 letterSpacing: '1px',

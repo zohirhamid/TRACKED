@@ -283,7 +283,7 @@ const AddTrackerModal = ({ isOpen, onClose, onAdd, theme }) => {
                 background: formData.name.trim() ? theme.accent : theme.bgCard,
                 border: 'none',
                 borderRadius: '4px',
-                color: formData.name.trim() ? '#000' : theme.textMuted,
+                color: formData.name.trim() ? theme.accentText : theme.textMuted,
                 padding: '14px',
                 fontSize: '10px',
                 letterSpacing: '2px',

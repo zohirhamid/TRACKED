@@ -295,7 +295,7 @@ const TrackerManager = ({ isOpen, onClose, trackers, onUpdate, theme }) => {
             style={{
               background: theme.accent,
               border: 'none',
-              color: '#000',
+              color: theme.accentText,
               padding: '10px 20px',
               cursor: saving ? 'default' : 'pointer',
               fontSize: '10px',
