@@ -240,10 +240,6 @@ if not _redis_url:
             _auth = ""
         _redis_url = f"{_scheme}://{_auth}{_redis_host}:{_redis_port}/{_redis_db}"
 
-# Never silently fall back to localhost in production (it causes runtime 500s if no local Redis exists).
-if not _redis_url and DEBUG:
-    _redis_url = os.getenv("LOCAL_REDIS_URL") or "redis://127.0.0.1:6379/1"
-
 if _redis_url:
     CACHES = {
         "default": {
@@ -258,10 +254,7 @@ if _redis_url:
         }
     }
 else:
-    if not DEBUG:
-        raise RuntimeError(
-            "Redis cache is required in production. Set REDIS_URL (or REDIS_TLS_URL/CACHE_URL/REDIS_PRIVATE_URL)."
-        )
+    # Fallback when Redis isn't configured (per-process; not shared across workers).
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
