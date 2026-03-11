@@ -1,7 +1,7 @@
 import os
 import importlib.util
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 import dj_database_url
 from corsheaders.defaults import default_headers
 
@@ -11,11 +11,34 @@ from corsheaders.defaults import default_headers
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
 
+def _parse_bool(value, *, default=False):
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is not set")
 
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+_debug_raw = os.getenv("DJANGO_DEBUG")
+if _debug_raw is None:
+    # Avoid collisions with platform-provided DEBUG values like "release".
+    _env_debug = os.getenv("DEBUG")
+    if _env_debug is not None and str(_env_debug).strip().lower() in {
+        "1", "true", "yes", "on", "0", "false", "no", "off",
+    }:
+        _debug_raw = _env_debug
+    else:
+        _dotenv_path = BASE_DIR / ".env"
+        if _dotenv_path.exists():
+            _debug_raw = dotenv_values(_dotenv_path).get("DEBUG")
+
+DEBUG = _parse_bool(_debug_raw, default=False)
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -188,16 +211,42 @@ REST_FRAMEWORK = {
 }
 
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'TIMEOUT': 300,  # 5 minutes default
+_redis_url = (
+    os.getenv("REDIS_URL")
+    or os.getenv("REDIS_TLS_URL")
+    or os.getenv("CACHE_URL")
+    or os.getenv("CACHE_TLS_URL")
+)
+
+# Never silently fall back to localhost in production (it causes runtime 500s if no local Redis exists).
+if not _redis_url and DEBUG:
+    _redis_url = os.getenv("LOCAL_REDIS_URL") or "redis://127.0.0.1:6379/1"
+
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": _redis_url,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # In dev, avoid hard failures if Redis isn't running yet.
+                "IGNORE_EXCEPTIONS": DEBUG,
+            },
+            "TIMEOUT": 300,  # 5 minutes default
+        }
     }
-}
+else:
+    if not DEBUG:
+        raise RuntimeError(
+            "Redis cache is required in production. Set REDIS_URL (or REDIS_TLS_URL/CACHE_URL)."
+        )
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "tracked-app-dev",
+            "TIMEOUT": 300,
+        }
+    }
 
 # ─────────────────────────────────────────────
 # URLS / WSGI
