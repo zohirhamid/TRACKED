@@ -1,8 +1,9 @@
 import os
+import importlib.util
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
-from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 # ─────────────────────────────────────────────
 # BASE CONFIG
@@ -47,27 +48,45 @@ TEMPLATES = [
 # CSRF & CORS (REACT)
 # ─────────────────────────────────────────────
 CSRF_TRUSTED_ORIGINS = [
-    "https://merry-caring-production-8d3a.up.railway.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://tracked.zohirhamid.com",
     "https://tracked-app-production.up.railway.app",
     "https://tracked-production.up.railway.app",
-    "https://tracked.zohirhamid.com",
-    "https://api.tracked.zohirhamid.com",
 ]
 
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
+_cookie_secure_env = os.getenv("COOKIE_SECURE")
+if _cookie_secure_env is None:
+    COOKIE_SECURE = not DEBUG
+else:
+    COOKIE_SECURE = _cookie_secure_env.lower() in {"1", "true", "yes", "on"}
 
-CORS_ALLOW_ALL_ORIGINS = True
+if COOKIE_SECURE:
+    CSRF_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SAMESITE = "None"
+else:
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+CSRF_COOKIE_SECURE = COOKIE_SECURE
+SESSION_COOKIE_SECURE = COOKIE_SECURE
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-session-token",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://merry-caring-production-8d3a.up.railway.app",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://tracked.zohirhamid.com",
     "https://tracked-app-production.up.railway.app",
     "https://tracked-production.up.railway.app",
-    "https://tracked.zohirhamid.com",
-    "https://api.tracked.zohirhamid.com",
 ]
 
 # ─────────────────────────────────────────────
@@ -95,18 +114,50 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
 
     # Third-party
     "rest_framework",
-    "rest_framework.authtoken",
     "corsheaders",
+
+    #
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.headless",
 
     # Local apps
     "apps.tracker",
-    "apps.core",
     "apps.payments",
     "apps.insights",
 ]
+
+# Optional dev-only apps (avoid hard failure if not installed)
+if importlib.util.find_spec("django_extensions") is not None:
+    INSTALLED_APPS.append("django_extensions")
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+ACCOUNT_LOGIN_METHODS = {"email"} # makes login email based
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"] # keeps signup minimal: no username, no extra fields
+ACCOUNT_EMAIL_VERIFICATION = "none" # no email verification
+ACCOUNT_UNIQUE_EMAIL = True # makes email unique identity
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    }
+}
+
+HEADLESS_ONLY = True # tells allauth you are using the API/headless flow instead of the classic browser pages
+
 
 # ─────────────────────────────────────────────
 # MIDDLEWARE
@@ -114,33 +165,28 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # ─────────────────────────────────────────────
-# REST FRAMEWORK (JWT)
+# REST FRAMEWORK (AUTH)
 # ─────────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "allauth.headless.contrib.rest_framework.authentication.XSessionTokenAuthentication",
         'rest_framework.authentication.SessionAuthentication',
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
 
 CACHES = {
     'default': {
