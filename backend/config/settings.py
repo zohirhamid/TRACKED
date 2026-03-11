@@ -216,7 +216,29 @@ _redis_url = (
     or os.getenv("REDIS_TLS_URL")
     or os.getenv("CACHE_URL")
     or os.getenv("CACHE_TLS_URL")
+    # Common managed-platform variants
+    or os.getenv("REDIS_PRIVATE_URL")
+    or os.getenv("REDIS_PUBLIC_URL")
 )
+
+# Some providers expose host/port/password separately; build a URL if possible.
+if not _redis_url:
+    _redis_host = os.getenv("REDIS_HOST") or os.getenv("REDISHOST")
+    _redis_port = os.getenv("REDIS_PORT") or os.getenv("REDISPORT") or "6379"
+    _redis_password = os.getenv("REDIS_PASSWORD") or os.getenv("REDISPASSWORD")
+    _redis_user = os.getenv("REDIS_USER") or os.getenv("REDISUSERNAME")
+    _redis_db = os.getenv("REDIS_DB") or os.getenv("REDISDATABASE") or "1"
+    _redis_tls = _parse_bool(os.getenv("REDIS_TLS"), default=False)
+
+    if _redis_host:
+        _scheme = "rediss" if _redis_tls else "redis"
+        if _redis_user and _redis_password:
+            _auth = f"{_redis_user}:{_redis_password}@"
+        elif _redis_password:
+            _auth = f":{_redis_password}@"
+        else:
+            _auth = ""
+        _redis_url = f"{_scheme}://{_auth}{_redis_host}:{_redis_port}/{_redis_db}"
 
 # Never silently fall back to localhost in production (it causes runtime 500s if no local Redis exists).
 if not _redis_url and DEBUG:
@@ -238,7 +260,7 @@ if _redis_url:
 else:
     if not DEBUG:
         raise RuntimeError(
-            "Redis cache is required in production. Set REDIS_URL (or REDIS_TLS_URL/CACHE_URL)."
+            "Redis cache is required in production. Set REDIS_URL (or REDIS_TLS_URL/CACHE_URL/REDIS_PRIVATE_URL)."
         )
     CACHES = {
         "default": {
