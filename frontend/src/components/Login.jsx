@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../app/router.jsx';
 import { useTheme } from '../theme/ThemeContext';
+import { configAPI } from '../services/api';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const BUILD_GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 const Login = () => {
@@ -13,12 +14,32 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState(BUILD_GOOGLE_CLIENT_ID || '');
   const { login, signup, loginWithGoogle } = useAuth();
   const { theme } = useTheme();
 
   const googleButtonRef = useRef(null);
   const googleInitializedRef = useRef(false);
   const lastGoogleCredentialRef = useRef(null);
+
+  useEffect(() => {
+    if (googleClientId) return;
+
+    let cancelled = false;
+    configAPI.getPublicConfig()
+      .then((config) => {
+        if (cancelled) return;
+        const id = config?.google_client_id || '';
+        if (id) setGoogleClientId(id);
+      })
+      .catch(() => {
+        // Non-blocking: fall back to email/password login.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [googleClientId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +59,7 @@ const Login = () => {
   const anyLoading = isLoading || isGoogleLoading;
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!googleClientId) return;
     if (!googleButtonRef.current) return;
     if (googleInitializedRef.current) return;
 
@@ -69,7 +90,7 @@ const Login = () => {
       googleInitializedRef.current = true;
 
       window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: googleClientId,
         callback: async (response) => {
           const credential = response?.credential;
           if (!credential) return;
@@ -78,7 +99,7 @@ const Login = () => {
 
           setError('');
           setIsGoogleLoading(true);
-          const result = await loginWithGoogle(credential, GOOGLE_CLIENT_ID);
+          const result = await loginWithGoogle(credential, googleClientId);
           if (!result.success) {
             setError(result.error);
             setIsGoogleLoading(false);
@@ -103,7 +124,7 @@ const Login = () => {
     const onLoad = () => init();
     script.addEventListener('load', onLoad);
     return () => script.removeEventListener('load', onLoad);
-  }, [loginWithGoogle]);
+  }, [loginWithGoogle, googleClientId]);
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
@@ -177,7 +198,7 @@ const Login = () => {
         </div>
 
         {/* Google Login (top) */}
-        {GOOGLE_CLIENT_ID ? (
+        {googleClientId ? (
           <div style={{
             width: '100%',
             opacity: anyLoading ? 0.6 : 1,

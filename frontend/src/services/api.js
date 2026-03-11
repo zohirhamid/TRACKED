@@ -185,6 +185,13 @@ export const coreAPI = {
   },
 };
 
+export const configAPI = {
+  getPublicConfig: async () => {
+    const response = await api.get('/config/public/');
+    return response.data;
+  },
+};
+
 // Tracker APIs
 export const trackerAPI = {
   // Get month view (main Excel-like grid)
