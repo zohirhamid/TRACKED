@@ -1,46 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { coreAPI } from '../services/api';
+import React from 'react';
 import { navigate } from '../app/router.jsx';
 import { useTheme } from '../theme/ThemeContext';
 
-const DEMO_USERNAME = 'demo';
-const DEMO_PASSWORD = 'london2024';
 const LandingPage = () => {
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
-  const [userCount, setUserCount] = useState(null);
-  const { login } = useAuth();
   const { theme } = useTheme();
-
-  const handleDemo = async () => {
-    setIsDemoLoading(true);
-    const result = await login(DEMO_USERNAME, DEMO_PASSWORD);
-    if (!result.success) {
-      setIsDemoLoading(false);
-      alert('Demo account unavailable. Please try again later.');
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadUserCount = async () => {
-      try {
-        const data = await coreAPI.getUserCount();
-        if (isMounted && Number.isFinite(data?.count)) {
-          setUserCount(data.count);
-        }
-      } catch (error) {
-        // Silently fail; keep placeholder on landing page.
-      }
-    };
-
-    loadUserCount();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   return (
     <div style={{
@@ -79,43 +42,23 @@ const LandingPage = () => {
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
-            onClick={handleDemo}
-            disabled={isDemoLoading}
-            className="cta-btn"
-            style={{
-              background: 'transparent',
-              border: `1px solid ${theme.accent}`,
-              color: theme.accent,
-              padding: '8px 16px',
-              fontSize: '9px',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              cursor: isDemoLoading ? 'default' : 'pointer',
-              fontFamily: 'inherit',
-              opacity: isDemoLoading ? 0.6 : 1,
-            }}
-          >
-            {isDemoLoading ? '...' : 'Try Demo'}
-          </button>
-          <button
             onClick={() => navigate('/login')}
             className="cta-btn"
             style={{
-              background: theme.accent,
-              border: 'none',
-              color: theme.accentText,
+              background: 'transparent',
+              border: `1px solid ${theme.border}`,
+              color: theme.textMuted,
               padding: '8px 16px',
               fontSize: '9px',
               letterSpacing: '1px',
               textTransform: 'uppercase',
               cursor: 'pointer',
               fontFamily: 'inherit',
-              fontWeight: '500',
             }}
-          >
-            Sign In
-          </button>
-        </div>
+	          >
+	            Login
+	          </button>
+	        </div>
       </nav>
 
       {/* ── Hero Section ── */}
@@ -151,7 +94,7 @@ const LandingPage = () => {
               height: '6px',
               background: '#22c55e',
             }} />
-            {Number.isFinite(userCount) ? userCount.toLocaleString() : '...'} users
+            Create your account
           </div>
         </div>
 
@@ -195,8 +138,7 @@ const LandingPage = () => {
           justifyContent: 'center',
         }}>
           <button
-            onClick={handleDemo}
-            disabled={isDemoLoading}
+            onClick={() => navigate('/login')}
             className="cta-btn"
             style={{
               background: theme.accent,
@@ -206,30 +148,12 @@ const LandingPage = () => {
               fontSize: '10px',
               letterSpacing: '2px',
               textTransform: 'uppercase',
-              cursor: isDemoLoading ? 'default' : 'pointer',
-              fontFamily: 'inherit',
-              fontWeight: '500',
-              opacity: isDemoLoading ? 0.6 : 1,
-            }}
-          >
-            {isDemoLoading ? 'Loading...' : 'Try Demo →'}
-          </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="cta-btn"
-            style={{
-              background: 'transparent',
-              border: `1px solid ${theme.border}`,
-              color: theme.textMuted,
-              padding: '14px 32px',
-              fontSize: '10px',
-              letterSpacing: '2px',
-              textTransform: 'uppercase',
               cursor: 'pointer',
               fontFamily: 'inherit',
+              fontWeight: '500',
             }}
           >
-            Sign Up
+            Get Started
           </button>
         </div>
 

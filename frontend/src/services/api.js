@@ -1,112 +1,180 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  'https://tracked-app-production.up.railway.app/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL is not set');
+}
 
 const notifyAuthChanged = () => {
-  window.dispatchEvent(new Event('auth:tokens'));
+  window.dispatchEvent(new Event('auth:changed'));
+};
+
+const SESSION_TOKEN_STORAGE_KEY = 'session_token';
+
+const getSessionToken = () => localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
+
+const setSessionToken = (token) => {
+  if (!token) {
+    localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+    return;
+  }
+  localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, token);
+};
+
+const clearLocalAuth = () => {
+  setSessionToken(null);
+  localStorage.removeItem('session_user');
 };
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  // Use allauth "app" (X-Session-Token) mode: no cookies, no CSRF.
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add JWT token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+api.interceptors.request.use((config) => {
+  const token = getSessionToken();
+  if (!token) return config;
 
-// Response interceptor to handle token refresh
+  config.headers = config.headers || {};
+  config.headers['X-Session-Token'] = token;
+  return config;
+});
+
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    const status = error.response?.status;
-
-    // If 401/403 and we haven't retried yet, try to refresh token
-    if ((status === 401 || status === 403) && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
-
-        const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
-          refresh: refreshToken,
-        });
-
-        const { access } = response.data;
-        localStorage.setItem('access_token', access);
-
-        // Retry original request with new token
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        notifyAuthChanged();
-        window.location.hash = '#/login';
-        return Promise.reject(refreshError);
-      }
+  (response) => {
+    const token = response?.data?.meta?.session_token;
+    if (token) setSessionToken(token);
+    return response;
+  },
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 410) {
+      clearLocalAuth();
+      notifyAuthChanged();
     }
-
     return Promise.reject(error);
-  }
+  },
 );
+
+const setSessionUser = (user) => {
+  if (!user) {
+    localStorage.removeItem('session_user');
+    return;
+  }
+  localStorage.setItem('session_user', JSON.stringify(user));
+};
+
+const getAllauthUser = (payload) => payload?.data?.user || null;
+
+const getAllauthError = (error) => {
+  const errors = error?.response?.data?.errors;
+  if (Array.isArray(errors) && errors.length) {
+    return errors[0]?.message || errors[0]?.code || 'Request failed';
+  }
+  return error?.response?.data?.detail || 'Request failed';
+};
+
+const with410Retry = async (fn) => {
+  try {
+    return await fn();
+  } catch (error) {
+    const status = error?.response?.status;
+    if (status !== 410) throw error;
+    clearLocalAuth();
+    notifyAuthChanged();
+    return await fn();
+  }
+};
 
 // Auth APIs
 export const authAPI = {
-  login: async (username, password) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/token/`, {
-      username,
-      password,
-    });
-    const { access, refresh } = response.data;
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
+  login: async (email, password) => {
+    const response = await with410Retry(() =>
+      api.post('/_allauth/app/v1/auth/login', { email, password }),
+    );
+    const user = getAllauthUser(response.data);
+    setSessionUser(user);
     notifyAuthChanged();
-    return response.data;
+    return user;
   },
 
-  signup: async (username, password, email) => {
-    const response = await axios.post(`${API_BASE_URL}/core/signup/`, {
-      username,
-      password,
-      email,
-    });
-    const { access, refresh } = response.data;
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
+  signup: async (email, password) => {
+    const response = await with410Retry(() =>
+      api.post('/_allauth/app/v1/auth/signup', { email, password }),
+    );
+    const user = getAllauthUser(response.data);
+    setSessionUser(user);
     notifyAuthChanged();
-    return response.data;
+    return user;
   },
 
+  googleLogin: async (credential, clientId) => {
+    const response = await with410Retry(() =>
+      api.post('/_allauth/app/v1/auth/provider/token', {
+        provider: 'google',
+        process: 'login',
+        token: {
+          client_id: clientId,
+          id_token: credential,
+        },
+      }),
+    );
+    const user = getAllauthUser(response.data);
+    setSessionUser(user);
+    notifyAuthChanged();
+    return user;
+  },
+
+  me: async () => {
+    try {
+      const response = await with410Retry(() => api.get('/_allauth/app/v1/auth/session'));
+      const user = getAllauthUser(response.data);
+      setSessionUser(user);
+      notifyAuthChanged();
+      return user;
+    } catch (error) {
+      const status = error?.response?.status;
+      if (status === 401) {
+        setSessionUser(null);
+        notifyAuthChanged();
+        return null;
+      }
+      setSessionUser(null);
+      notifyAuthChanged();
+      throw error;
+    }
+  },
   
   logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    clearLocalAuth();
     notifyAuthChanged();
+  },
+
+  serverLogout: async () => {
+    try {
+      const response = await with410Retry(() => api.delete('/_allauth/app/v1/auth/session'));
+      return response.data;
+    } catch (error) {
+      const status = error?.response?.status;
+      if (status === 401) return null; // already logged out
+      throw error;
+    } finally {
+      clearLocalAuth();
+      notifyAuthChanged();
+    }
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('access_token');
+    return !!localStorage.getItem('session_user');
   },
+
+  getErrorMessage: getAllauthError,
 };
 
 // Core APIs

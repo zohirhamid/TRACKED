@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { navigate } from '../app/router.jsx';
 import { useTheme } from '../theme/ThemeContext';
 
-const DEMO_USERNAME = 'demo';
-const DEMO_PASSWORD = 'london2024';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const { theme } = useTheme();
+
+  const googleButtonRef = useRef(null);
+  const googleInitializedRef = useRef(false);
+  const lastGoogleCredentialRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,8 +26,8 @@ const Login = () => {
     setIsLoading(true);
 
     const result = isSignUp
-      ? await signup(username, password, email)
-      : await login(username, password);
+      ? await signup(email, password)
+      : await login(email, password);
 
     if (!result.success) {
       setError(result.error);
@@ -32,24 +35,80 @@ const Login = () => {
     }
   };
 
-  const handleDemo = async () => {
-    setError('');
-    setIsDemoLoading(true);
+  const anyLoading = isLoading || isGoogleLoading;
 
-    const result = await login(DEMO_USERNAME, DEMO_PASSWORD);
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    if (!googleButtonRef.current) return;
+    if (googleInitializedRef.current) return;
 
-    if (!result.success) {
-      setError('Demo account unavailable. Please try again later.');
-      setIsDemoLoading(false);
+    const origin = window.location.origin;
+    if (origin.includes('127.0.0.1')) {
+      setError('Google Sign-In requires an authorized origin. Use http://localhost:5173 (not 127.0.0.1) for local dev.');
+      return;
     }
-  };
+
+    const ensureScript = () => {
+      const existing = document.querySelector(`script[src="${GOOGLE_SCRIPT_SRC}"]`);
+      if (existing) return existing;
+
+      const script = document.createElement('script');
+      script.src = GOOGLE_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+      return script;
+    };
+
+    const script = ensureScript();
+
+    const init = () => {
+      if (googleInitializedRef.current) return;
+      if (!window.google?.accounts?.id) return;
+
+      googleInitializedRef.current = true;
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          const credential = response?.credential;
+          if (!credential) return;
+          if (lastGoogleCredentialRef.current === credential) return;
+          lastGoogleCredentialRef.current = credential;
+
+          setError('');
+          setIsGoogleLoading(true);
+          const result = await loginWithGoogle(credential, GOOGLE_CLIENT_ID);
+          if (!result.success) {
+            setError(result.error);
+            setIsGoogleLoading(false);
+          }
+        },
+      });
+
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rect',
+        width: 336,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      init();
+      return;
+    }
+
+    const onLoad = () => init();
+    script.addEventListener('load', onLoad);
+    return () => script.removeEventListener('load', onLoad);
+  }, [loginWithGoogle]);
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
     setError('');
   };
-
-  const anyLoading = isLoading || isDemoLoading;
 
   return (
     <div style={{
@@ -113,9 +172,38 @@ const Login = () => {
             margin: 0,
             letterSpacing: '-0.5px',
           }}>
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+            {isSignUp ? 'Sign Up' : 'Login'}
           </h1>
         </div>
+
+        {/* Google Login (top) */}
+        {GOOGLE_CLIENT_ID ? (
+          <div style={{
+            width: '100%',
+            opacity: anyLoading ? 0.6 : 1,
+            pointerEvents: anyLoading ? 'none' : 'auto',
+          }}>
+            <div style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '16px',
+            }}>
+              <div ref={googleButtonRef} />
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              margin: '16px 0 24px',
+            }}>
+              <div style={{ flex: 1, height: '1px', background: theme.border }} />
+              <span style={{ fontSize: '9px', color: theme.textMuted, letterSpacing: '1px' }}>OR</span>
+              <div style={{ flex: 1, height: '1px', background: theme.border }} />
+            </div>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
@@ -127,12 +215,12 @@ const Login = () => {
               textTransform: 'uppercase',
               marginBottom: '8px',
             }}>
-              Username
+              Email
             </label>
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               style={{
                 width: '100%',
@@ -146,36 +234,6 @@ const Login = () => {
               }}
             />
           </div>
-
-          {isSignUp && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '10px',
-                letterSpacing: '1px',
-                color: theme.textMuted,
-                textTransform: 'uppercase',
-                marginBottom: '8px',
-              }}>
-                Email <span style={{ color: theme.textMuted, fontSize: '9px', textTransform: 'none' }}>(optional)</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: theme.bgCard,
-                  border: `1px solid ${theme.border}`,
-                  color: theme.text,
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          )}
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{
@@ -236,65 +294,30 @@ const Login = () => {
               fontWeight: '500',
               opacity: anyLoading ? 0.6 : 1,
             }}
-          >
-            {isLoading
-              ? (isSignUp ? 'Creating account...' : 'Signing in...')
-              : (isSignUp ? 'Sign Up' : 'Sign In')}
-          </button>
-        </form>
+	          >
+	            {isLoading
+	              ? (isSignUp ? 'Creating account...' : 'Logging in...')
+	              : (isSignUp ? 'Sign Up' : 'Login')}
+	          </button>
+	        </form>
 
-        {/* Divider */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          margin: '24px 0',
-        }}>
-          <div style={{ flex: 1, height: '1px', background: theme.border }} />
-          <span style={{ fontSize: '9px', color: theme.textMuted, letterSpacing: '1px' }}>OR</span>
-          <div style={{ flex: 1, height: '1px', background: theme.border }} />
-        </div>
-
-        {/* Demo Button */}
-        <button
-          onClick={handleDemo}
-          disabled={anyLoading}
-          style={{
-            width: '100%',
-            background: 'transparent',
-            border: `1px solid ${theme.accent}`,
-            color: theme.accent,
-            padding: '14px',
-            fontSize: '10px',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            cursor: anyLoading ? 'default' : 'pointer',
-            fontFamily: 'inherit',
-            fontWeight: '500',
-            opacity: anyLoading ? 0.6 : 1,
-            transition: 'all 0.15s ease',
-          }}
-        >
-          {isDemoLoading ? 'Loading demo...' : 'Try Demo'}
-        </button>
-
-        <div style={{
-          textAlign: 'center',
-          marginTop: '24px',
+	        <div style={{
+	          textAlign: 'center',
+	          marginTop: '24px',
           fontSize: '12px',
           color: theme.textMuted,
         }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <span
             onClick={toggleMode}
-            style={{
-              color: theme.accent,
-              cursor: 'pointer',
-            }}
-          >
-            {isSignUp ? 'Sign In' : 'Sign Up'}
-          </span>
-        </div>
+	            style={{
+	              color: theme.accent,
+	              cursor: 'pointer',
+	            }}
+	          >
+	            {isSignUp ? 'Login' : 'Sign Up'}
+	          </span>
+	        </div>
       </div>
     </div>
   );

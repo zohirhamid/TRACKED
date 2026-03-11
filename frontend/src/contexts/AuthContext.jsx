@@ -3,58 +3,96 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
+let bootstrapInFlight = null;
+
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const syncAuth = () => {
       setIsAuthenticated(authAPI.isAuthenticated());
     };
 
-    syncAuth();
-    setIsLoading(false);
-
-    const onTokens = () => syncAuth();
-    const onStorage = (e) => {
-      if (e.key === 'access_token' || e.key === 'refresh_token') syncAuth();
+    const bootstrap = async () => {
+      if (!bootstrapInFlight) {
+        bootstrapInFlight = authAPI.me().finally(() => {
+          bootstrapInFlight = null;
+        });
+      }
+      await bootstrapInFlight;
     };
 
-    window.addEventListener('auth:tokens', onTokens);
+    bootstrap()
+      .catch(() => {
+        // Not authenticated (expected on cold start)
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        syncAuth();
+        setIsLoading(false);
+      });
+
+    const onAuthChanged = () => syncAuth();
+    const onStorage = (e) => {
+      if (e.key === 'session_user') syncAuth();
+    };
+
+    window.addEventListener('auth:changed', onAuthChanged);
     window.addEventListener('storage', onStorage);
     return () => {
-      window.removeEventListener('auth:tokens', onTokens);
+      isMounted = false;
+      window.removeEventListener('auth:changed', onAuthChanged);
       window.removeEventListener('storage', onStorage);
     };
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     try {
-      await authAPI.login(username, password);
+      await authAPI.login(email, password);
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Login failed',
+        error: authAPI.getErrorMessage?.(error) || 'Login failed',
       };
     }
   };
 
-  const signup = async (username, password, email) => {
+  const loginWithGoogle = async (credential, clientId) => {
     try {
-      await authAPI.signup(username, password, email);
+      await authAPI.googleLogin(credential, clientId);
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Signup failed',
+        error: authAPI.getErrorMessage?.(error) || 'Google sign-in failed',
+      };
+    }
+  };
+
+  const signup = async (email, password) => {
+    try {
+      await authAPI.signup(email, password);
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: authAPI.getErrorMessage?.(error) || 'Signup failed',
       };
     }
   };
 
   const logout = () => {
+    authAPI.serverLogout?.().catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error('Server logout failed:', e?.response?.data || e);
+    });
     authAPI.logout();
     setIsAuthenticated(false);
   };
@@ -65,6 +103,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         isLoading,
         login,
+        loginWithGoogle,
         signup,
         logout,
       }}
